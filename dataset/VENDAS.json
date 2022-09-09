@@ -1,0 +1,42 @@
+{
+	"name": "VENDAS",
+	"properties": {
+		"linkedServiceName": {
+			"referenceName": "AzureOLTP",
+			"type": "LinkedServiceReference"
+		},
+		"annotations": [],
+		"type": "AzureSqlTable",
+		"schema": [
+			{
+				"name": "NUM_VENDA",
+				"type": "int",
+				"precision": 10
+			},
+			{
+				"name": "DATA_VENDA",
+				"type": "datetime",
+				"precision": 23,
+				"scale": 3
+			},
+			{
+				"name": "ID_CLIENTE",
+				"type": "int",
+				"precision": 10
+			},
+			{
+				"name": "ID_VENDEDOR",
+				"type": "int",
+				"precision": 10
+			},
+			{
+				"name": "STATUS",
+				"type": "char"
+			}
+		],
+		"typeProperties": {
+			"schema": "dbo",
+			"table": "VENDAS"
+		}
+	}
+}

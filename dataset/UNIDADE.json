@@ -1,0 +1,25 @@
+{
+	"name": "UNIDADE",
+	"properties": {
+		"linkedServiceName": {
+			"referenceName": "AzureOLTP",
+			"type": "LinkedServiceReference"
+		},
+		"annotations": [],
+		"type": "AzureSqlTable",
+		"schema": [
+			{
+				"name": "ID_UNIDADE",
+				"type": "varchar"
+			},
+			{
+				"name": "DESC_UNIDADE",
+				"type": "varchar"
+			}
+		],
+		"typeProperties": {
+			"schema": "dbo",
+			"table": "UNIDADE"
+		}
+	}
+}

@@ -1,0 +1,43 @@
+{
+	"name": "CLIENTE",
+	"properties": {
+		"linkedServiceName": {
+			"referenceName": "AzureOLTP",
+			"type": "LinkedServiceReference"
+		},
+		"annotations": [],
+		"type": "AzureSqlTable",
+		"schema": [
+			{
+				"name": "ID_CLIENTE",
+				"type": "int",
+				"precision": 10
+			},
+			{
+				"name": "NOME_CLIENTE",
+				"type": "varchar"
+			},
+			{
+				"name": "ENDERECO",
+				"type": "varchar"
+			},
+			{
+				"name": "NUMERO",
+				"type": "varchar"
+			},
+			{
+				"name": "ID_CIDADE",
+				"type": "int",
+				"precision": 10
+			},
+			{
+				"name": "CEP",
+				"type": "varchar"
+			}
+		],
+		"typeProperties": {
+			"schema": "dbo",
+			"table": "CLIENTE"
+		}
+	}
+}

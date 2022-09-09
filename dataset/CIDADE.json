@@ -1,0 +1,30 @@
+{
+	"name": "CIDADE",
+	"properties": {
+		"linkedServiceName": {
+			"referenceName": "AzureOLTP",
+			"type": "LinkedServiceReference"
+		},
+		"annotations": [],
+		"type": "AzureSqlTable",
+		"schema": [
+			{
+				"name": "ID_CIDADE",
+				"type": "int",
+				"precision": 10
+			},
+			{
+				"name": "NOME_CIDADE",
+				"type": "varchar"
+			},
+			{
+				"name": "UF",
+				"type": "varchar"
+			}
+		],
+		"typeProperties": {
+			"schema": "dbo",
+			"table": "CIDADE"
+		}
+	}
+}

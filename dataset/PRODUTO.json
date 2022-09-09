@@ -1,0 +1,41 @@
+{
+	"name": "PRODUTO",
+	"properties": {
+		"linkedServiceName": {
+			"referenceName": "AzureOLTP",
+			"type": "LinkedServiceReference"
+		},
+		"annotations": [],
+		"type": "AzureSqlTable",
+		"schema": [
+			{
+				"name": "ID_PROD",
+				"type": "int",
+				"precision": 10
+			},
+			{
+				"name": "NOME_PRODUTO",
+				"type": "varchar"
+			},
+			{
+				"name": "ID_CATEGORIA",
+				"type": "int",
+				"precision": 10
+			},
+			{
+				"name": "ID_UNIDADE",
+				"type": "varchar"
+			},
+			{
+				"name": "PRECO",
+				"type": "decimal",
+				"precision": 10,
+				"scale": 2
+			}
+		],
+		"typeProperties": {
+			"schema": "dbo",
+			"table": "PRODUTOS"
+		}
+	}
+}

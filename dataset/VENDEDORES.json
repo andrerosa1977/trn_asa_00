@@ -1,0 +1,32 @@
+{
+	"name": "VENDEDORES",
+	"properties": {
+		"linkedServiceName": {
+			"referenceName": "AzureOLTP",
+			"type": "LinkedServiceReference"
+		},
+		"annotations": [],
+		"type": "AzureSqlTable",
+		"schema": [
+			{
+				"name": "ID_VENDEDOR",
+				"type": "int",
+				"precision": 10
+			},
+			{
+				"name": "NOME_VENDEDOR",
+				"type": "varchar"
+			},
+			{
+				"name": "SALARIO",
+				"type": "decimal",
+				"precision": 10,
+				"scale": 2
+			}
+		],
+		"typeProperties": {
+			"schema": "dbo",
+			"table": "VENDEDORES"
+		}
+	}
+}

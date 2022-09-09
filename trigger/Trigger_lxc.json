@@ -6,7 +6,7 @@
 		"pipelines": [
 			{
 				"pipelineReference": {
-					"referenceName": "Cargageral1",
+					"referenceName": "01 CARGA RAW",
 					"type": "PipelineReference"
 				}
 			}

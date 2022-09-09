@@ -1,0 +1,20 @@
+{
+	"name": "STG_CLIENTE",
+	"properties": {
+		"linkedServiceName": {
+			"referenceName": "asa-trn-99-WorkspaceDefaultStorage",
+			"type": "LinkedServiceReference"
+		},
+		"annotations": [],
+		"type": "Parquet",
+		"typeProperties": {
+			"location": {
+				"type": "AzureBlobFSLocation",
+				"folderPath": "bronze/cliente",
+				"fileSystem": "treinamento"
+			},
+			"compressionCodec": "snappy"
+		},
+		"schema": []
+	}
+}
