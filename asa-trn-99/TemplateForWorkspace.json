@@ -11,6 +11,10 @@
 			"type": "secureString",
 			"metadata": "Secure string for 'connectionString' of 'AzureOLTP'"
 		},
+		"AzureSynapseAnalytics1_connectionString": {
+			"type": "secureString",
+			"metadata": "Secure string for 'connectionString' of 'AzureSynapseAnalytics1'"
+		},
 		"asa-trn-99-WorkspaceDefaultSqlServer_connectionString": {
 			"type": "secureString",
 			"metadata": "Secure string for 'connectionString' of 'asa-trn-99-WorkspaceDefaultSqlServer'"
@@ -24,6 +28,15 @@
 		"workspaceId": "[concat('Microsoft.Synapse/workspaces/', parameters('workspaceName'))]"
 	},
 	"resources": [
+		{
+			"name": "[concat(parameters('workspaceName'), '/mapvendas')]",
+			"type": "Microsoft.Synapse/workspaces/dataMappers",
+			"apiVersion": "2019-06-01-preview",
+			"properties": {},
+			"dependsOn": [
+				"[concat(variables('workspaceId'), '/linkedServices/asa-trn-99-WorkspaceDefaultStorage')]"
+			]
+		},
 		{
 			"name": "[concat(parameters('workspaceName'), '/01 CARGA RAW')]",
 			"type": "Microsoft.Synapse/workspaces/pipelines",
@@ -713,6 +726,31 @@
 			]
 		},
 		{
+			"name": "[concat(parameters('workspaceName'), '/SAIDA_VENDAS_PARQUET_PART')]",
+			"type": "Microsoft.Synapse/workspaces/datasets",
+			"apiVersion": "2019-06-01-preview",
+			"properties": {
+				"linkedServiceName": {
+					"referenceName": "asa-trn-99-WorkspaceDefaultStorage",
+					"type": "LinkedServiceReference"
+				},
+				"annotations": [],
+				"type": "Parquet",
+				"typeProperties": {
+					"location": {
+						"type": "AzureBlobFSLocation",
+						"folderPath": "gold/",
+						"fileSystem": "treinamento"
+					},
+					"compressionCodec": "snappy"
+				},
+				"schema": []
+			},
+			"dependsOn": [
+				"[concat(variables('workspaceId'), '/linkedServices/asa-trn-99-WorkspaceDefaultStorage')]"
+			]
+		},
+		{
 			"name": "[concat(parameters('workspaceName'), '/SRT_VENDAS_ITENS')]",
 			"type": "Microsoft.Synapse/workspaces/datasets",
 			"apiVersion": "2019-06-01-preview",
@@ -1147,6 +1185,30 @@
 			]
 		},
 		{
+			"name": "[concat(parameters('workspaceName'), '/VW_VENDAS_SL')]",
+			"type": "Microsoft.Synapse/workspaces/datasets",
+			"apiVersion": "2019-06-01-preview",
+			"properties": {
+				"linkedServiceName": {
+					"referenceName": "asa-trn-99-WorkspaceDefaultSqlServer",
+					"type": "LinkedServiceReference",
+					"parameters": {
+						"DBName": "database1"
+					}
+				},
+				"annotations": [],
+				"type": "AzureSqlDWTable",
+				"schema": [],
+				"typeProperties": {
+					"schema": "",
+					"table": "vendas"
+				}
+			},
+			"dependsOn": [
+				"[concat(variables('workspaceId'), '/linkedServices/asa-trn-99-WorkspaceDefaultSqlServer')]"
+			]
+		},
+		{
 			"name": "[concat(parameters('workspaceName'), '/AzureOLTP')]",
 			"type": "Microsoft.Synapse/workspaces/linkedServices",
 			"apiVersion": "2019-06-01-preview",
@@ -1155,6 +1217,25 @@
 				"type": "AzureSqlDatabase",
 				"typeProperties": {
 					"connectionString": "[parameters('AzureOLTP_connectionString')]"
+				},
+				"connectVia": {
+					"referenceName": "AutoResolveIntegrationRuntime",
+					"type": "IntegrationRuntimeReference"
+				}
+			},
+			"dependsOn": [
+				"[concat(variables('workspaceId'), '/integrationRuntimes/AutoResolveIntegrationRuntime')]"
+			]
+		},
+		{
+			"name": "[concat(parameters('workspaceName'), '/AzureSynapseAnalytics1')]",
+			"type": "Microsoft.Synapse/workspaces/linkedServices",
+			"apiVersion": "2019-06-01-preview",
+			"properties": {
+				"annotations": [],
+				"type": "AzureSqlDW",
+				"typeProperties": {
+					"connectionString": "[parameters('AzureSynapseAnalytics1_connectionString')]"
 				},
 				"connectVia": {
 					"referenceName": "AutoResolveIntegrationRuntime",
@@ -1391,7 +1472,7 @@
 					"name": "01_SERVERLESS"
 				},
 				"content": {
-					"query": "\n\nCREATE EXTERNAL TABLE SILVER.D_CATEGORIA (\n\t[ID_CATEGORIA] int,\n\t[NOME_CATEGORIA] nvarchar(4000)\n\t)\n\tWITH (\n\tLOCATION = 'bronze/categoria/dboCATEGORIA.parquet',\n\tDATA_SOURCE = [treinamento_adlstrnsolar99_dfs_core_windows_net],\n\tFILE_FORMAT = [SynapseParquetFormat]\n\t)\nGO\n",
+					"query": "\n--DROP EXTERNAL TABLE SILVER.D_CATEGORIA\nCREATE EXTERNAL TABLE SILVER.D_CATEGORIA (\n\t[ID_CATEGORIA] int,\n\t[NOME_CATEGORIA] nvarchar(4000)\n\t)\n\tWITH (\n\tLOCATION = 'bronze/categoria/dboCATEGORIA.parquet',\n\tDATA_SOURCE = [treinamento_adlstrnsolar99_dfs_core_windows_net],\n\tFILE_FORMAT = [ParquetFormat]\n\t)\nGO\n\n\n-- SELECT * FROM SILVER.D_CATEGORIA",
 					"metadata": {
 						"language": "sql"
 					},
@@ -1567,12 +1648,52 @@
 			"dependsOn": []
 		},
 		{
+			"name": "[concat(parameters('workspaceName'), '/13_SELECTCS')]",
+			"type": "Microsoft.Synapse/workspaces/sqlscripts",
+			"apiVersion": "2019-06-01-preview",
+			"properties": {
+				"content": {
+					"query": "\nSELECT * FROM SILVER.D_CATEGORIA",
+					"metadata": {
+						"language": "sql"
+					},
+					"currentConnection": {
+						"databaseName": "lhdw",
+						"poolName": "Built-in"
+					},
+					"resultLimit": 5000
+				},
+				"type": "SqlQuery"
+			},
+			"dependsOn": []
+		},
+		{
 			"name": "[concat(parameters('workspaceName'), '/13_VW_FATO_VENDAS')]",
 			"type": "Microsoft.Synapse/workspaces/sqlscripts",
 			"apiVersion": "2019-06-01-preview",
 			"properties": {
 				"content": {
 					"query": "CREATE VIEW GOLD.[VW_FATO_VENDAS]\n\tAS \n\tSELECT A.NUM_VENDA,\n\t       A.DATA_VENDA,\n\t\t   A.ID_CLIENTE,\n\t\t   A.ID_VENDEDOR,\n\t\t   A.STATUS,\n\t\t   B.NUM_SEQ,\n\t\t   B.ID_PROD,\n\t\t   B.VAL_UNIT,\n\t\t   B.VAL_TOTAL\n\t\t   \tFROM SILVER.VENDAS A\n\tINNER JOIN SILVER.VENDAS_ITENS B\n\tON A.NUM_VENDA=B.NUM_VENDA\n\n\n",
+					"metadata": {
+						"language": "sql"
+					},
+					"currentConnection": {
+						"databaseName": "lhdw",
+						"poolName": "Built-in"
+					},
+					"resultLimit": 5000
+				},
+				"type": "SqlQuery"
+			},
+			"dependsOn": []
+		},
+		{
+			"name": "[concat(parameters('workspaceName'), '/14_VW__UNIDADE')]",
+			"type": "Microsoft.Synapse/workspaces/sqlscripts",
+			"apiVersion": "2019-06-01-preview",
+			"properties": {
+				"content": {
+					"query": "-- This is auto-generated code\nCREATE VIEW VW_UNIDADE\nAS\nSELECT\n    TOP 100 *\nFROM\n    OPENROWSET(\n        BULK 'https://adlstrnsolar99.dfs.core.windows.net/treinamento/bronze/unidade/dbo.UNIDADE.parquet',\n        FORMAT = 'PARQUET'\n    ) AS [result]\n",
 					"metadata": {
 						"language": "sql"
 					},
@@ -1596,6 +1717,46 @@
 				},
 				"content": {
 					"query": "--VERIFICAR FORMATOS EXISTENTES\nSELECT * FROM sys.external_file_formats;  \n\n--ELIMINAR FORMATO EXISTENTE\nDROP EXTERNAL FILE FORMAT SynapseParquetFormat  ",
+					"metadata": {
+						"language": "sql"
+					},
+					"currentConnection": {
+						"databaseName": "lhdw",
+						"poolName": "Built-in"
+					},
+					"resultLimit": 5000
+				},
+				"type": "SqlQuery"
+			},
+			"dependsOn": []
+		},
+		{
+			"name": "[concat(parameters('workspaceName'), '/SQL script 1')]",
+			"type": "Microsoft.Synapse/workspaces/sqlscripts",
+			"apiVersion": "2019-06-01-preview",
+			"properties": {
+				"content": {
+					"query": "SELECT TOP (100) [ID_CATEGORIA]\n,[NOME_CATEGORIA]\n FROM [SILVER].[D_CATEGORIA]",
+					"metadata": {
+						"language": "sql"
+					},
+					"currentConnection": {
+						"databaseName": "lhdw",
+						"poolName": "Built-in"
+					},
+					"resultLimit": 5000
+				},
+				"type": "SqlQuery"
+			},
+			"dependsOn": []
+		},
+		{
+			"name": "[concat(parameters('workspaceName'), '/SQL script 2')]",
+			"type": "Microsoft.Synapse/workspaces/sqlscripts",
+			"apiVersion": "2019-06-01-preview",
+			"properties": {
+				"content": {
+					"query": "SELECT TOP (100) [ID_CIDADE]\n,[NOME_CIDADE]\n,[UF]\n FROM [SILVER].[D_CIDADE]",
 					"metadata": {
 						"language": "sql"
 					},
@@ -1819,332 +1980,6 @@
 						],
 						"outputs": [],
 						"execution_count": 3
-					}
-				]
-			},
-			"dependsOn": []
-		},
-		{
-			"name": "[concat(parameters('workspaceName'), '/Database1')]",
-			"type": "Microsoft.Synapse/workspaces/databases",
-			"apiVersion": "2019-06-01-preview",
-			"properties": {
-				"Ddls": [
-					{
-						"ActionType": "CREATE",
-						"OldEntity": null,
-						"NewEntity": {
-							"Name": "Database1",
-							"EntityType": "DATABASE",
-							"Origin": {
-								"Type": "SPARK"
-							},
-							"Properties": {
-								"IsSyMSCDMDatabase": true
-							},
-							"Source": {
-								"Provider": "ADLS",
-								"Location": "abfss://treinamento@adlstrnsolar99.dfs.core.windows.net/Database1",
-								"Properties": {
-									"FormatType": "csv",
-									"LinkedServiceName": "asa-trn-99-WorkspaceDefaultStorage"
-								}
-							},
-							"PublishStatus": "PUBLISHED",
-							"ObjectVersion": 6,
-							"ObjectId": "c4b9351c-376a-4600-bd77-83b0028213d6"
-						},
-						"Source": {
-							"Type": "SPARK"
-						}
-					},
-					{
-						"ActionType": "CREATE",
-						"OldEntity": null,
-						"NewEntity": {
-							"Name": "vendas",
-							"EntityType": "TABLE",
-							"TableType": "EXTERNAL",
-							"Namespace": {
-								"SchemaName": null,
-								"DatabaseName": "Database1",
-								"DatabaseId": null
-							},
-							"StorageDescriptor": {
-								"Distribution": null,
-								"Columns": [
-									{
-										"Name": "NUM_VENDA",
-										"Description": null,
-										"OriginDataTypeName": {
-											"TypeName": "integer",
-											"IsComplexType": false,
-											"IsNullable": true,
-											"Properties": {
-												"HIVE_TYPE_STRING": "integer"
-											}
-										}
-									},
-									{
-										"Name": "DATA_VENDA",
-										"Description": null,
-										"OriginDataTypeName": {
-											"TypeName": "timestamp",
-											"IsComplexType": false,
-											"IsNullable": true,
-											"Properties": {
-												"TimestampFormat": "YYYY-MM-DD HH:MM:SS.fffffffff",
-												"HIVE_TYPE_STRING": "timestamp"
-											}
-										}
-									},
-									{
-										"Name": "ID_CLIENTE",
-										"Description": null,
-										"OriginDataTypeName": {
-											"TypeName": "integer",
-											"IsComplexType": false,
-											"IsNullable": true,
-											"Properties": {
-												"HIVE_TYPE_STRING": "integer"
-											}
-										}
-									},
-									{
-										"Name": "ID_VENDEDOR",
-										"Description": null,
-										"OriginDataTypeName": {
-											"TypeName": "integer",
-											"IsComplexType": false,
-											"IsNullable": true,
-											"Properties": {
-												"HIVE_TYPE_STRING": "integer"
-											}
-										}
-									},
-									{
-										"Name": "STATUS",
-										"Description": null,
-										"OriginDataTypeName": {
-											"TypeName": "string",
-											"IsComplexType": false,
-											"IsNullable": true,
-											"Length": 8000,
-											"Properties": {
-												"HIVE_TYPE_STRING": "string"
-											}
-										}
-									}
-								],
-								"ColumnSetEntityName": "22f35e94-fc47-481c-a587-8fccb2fde407",
-								"Format": {
-									"InputFormat": "org.apache.hadoop.hive.ql.io.parquet.MapredParquetInputFormat",
-									"OutputFormat": "org.apache.hadoop.hive.ql.io.parquet.MapredParquetOutputFormat",
-									"FormatType": "parquet",
-									"SerializeLib": "org.apache.hadoop.hive.ql.io.parquet.serde.ParquetHiveSerDe",
-									"Properties": {
-										"path": "abfss://treinamento@adlstrnsolar99.dfs.core.windows.net/bronze/dboVENDAS.txt",
-										"FormatTypeSetToDatabaseDefault": false
-									}
-								},
-								"Source": {
-									"Provider": "ADLS",
-									"Location": "abfss://treinamento@adlstrnsolar99.dfs.core.windows.net/bronze/dboVENDAS.txt",
-									"Properties": {
-										"LinkedServiceName": "asa-trn-99-WorkspaceDefaultStorage",
-										"LocationSetToDatabaseDefault": false
-									}
-								},
-								"Properties": {
-									"textinputformat.record.delimiter": ",",
-									"compression": "{\"type\":\"None\",\"level\":\"optimal\"}",
-									"derivedModelAttributeInfo": "{\"attributeReferences\":{}}"
-								},
-								"Compressed": false,
-								"SerDeInfo": null,
-								"IsStoredAsSubdirectories": false
-							},
-							"Owner": null,
-							"CreateTime": 0,
-							"LastAccessTime": 0,
-							"Retention": 0,
-							"Temporary": false,
-							"IsRewriteEnabled": false,
-							"ViewOriginalText": null,
-							"ViewExpandedText": null,
-							"Origin": {
-								"Type": "SPARK"
-							},
-							"OriginObjectId": null,
-							"IsSharedEntity": false,
-							"PublishStatus": "PUBLISHED",
-							"Properties": {
-								"Description": "",
-								"DisplayFolderInfo": "{\"name\":\"Others\",\"colorCode\":\"\"}",
-								"PrimaryKeys": "",
-								"spark.sql.sources.provider": "parquet",
-								"spark.sql.sources.schema.numParts": "1",
-								"spark.sql.sources.schema.part.0": "{\"type\":\"struct\",\"fields\":[{\"name\":\"NUM_VENDA\",\"type\":\"integer\",\"nullable\":true,\"metadata\":{}},{\"name\":\"DATA_VENDA\",\"type\":\"timestamp\",\"nullable\":true,\"metadata\":{}},{\"name\":\"ID_CLIENTE\",\"type\":\"integer\",\"nullable\":true,\"metadata\":{}},{\"name\":\"ID_VENDEDOR\",\"type\":\"integer\",\"nullable\":true,\"metadata\":{}},{\"name\":\"STATUS\",\"type\":\"string\",\"nullable\":true,\"metadata\":{}}]}"
-							},
-							"ObjectVersion": 1,
-							"ObjectId": "41441817-560e-4e0d-803f-b5268198316b",
-							"Description": ""
-						},
-						"Source": {
-							"Type": "SPARK"
-						}
-					},
-					{
-						"ActionType": "CREATE",
-						"OldEntity": null,
-						"NewEntity": {
-							"Name": "vendas_itens",
-							"EntityType": "TABLE",
-							"TableType": "EXTERNAL",
-							"Namespace": {
-								"SchemaName": null,
-								"DatabaseName": "Database1",
-								"DatabaseId": null
-							},
-							"StorageDescriptor": {
-								"Distribution": null,
-								"Columns": [
-									{
-										"Name": "NUM_VENDA",
-										"Description": null,
-										"OriginDataTypeName": {
-											"TypeName": "integer",
-											"IsComplexType": false,
-											"IsNullable": true,
-											"Properties": {
-												"HIVE_TYPE_STRING": "integer"
-											}
-										}
-									},
-									{
-										"Name": "NUM_SEQ",
-										"Description": null,
-										"OriginDataTypeName": {
-											"TypeName": "integer",
-											"IsComplexType": false,
-											"IsNullable": true,
-											"Properties": {
-												"HIVE_TYPE_STRING": "integer"
-											}
-										}
-									},
-									{
-										"Name": "ID_PROD",
-										"Description": null,
-										"OriginDataTypeName": {
-											"TypeName": "integer",
-											"IsComplexType": false,
-											"IsNullable": true,
-											"Properties": {
-												"HIVE_TYPE_STRING": "integer"
-											}
-										}
-									},
-									{
-										"Name": "QTDE",
-										"Description": null,
-										"OriginDataTypeName": {
-											"TypeName": "decimal",
-											"IsComplexType": false,
-											"IsNullable": true,
-											"Precision": 10,
-											"Scale": 2,
-											"Properties": {
-												"HIVE_TYPE_STRING": "decimal"
-											}
-										}
-									},
-									{
-										"Name": "VAL_UNIT",
-										"Description": null,
-										"OriginDataTypeName": {
-											"TypeName": "decimal",
-											"IsComplexType": false,
-											"IsNullable": true,
-											"Precision": 10,
-											"Scale": 2,
-											"Properties": {
-												"HIVE_TYPE_STRING": "decimal"
-											}
-										}
-									},
-									{
-										"Name": "VAL_TOTAL",
-										"Description": null,
-										"OriginDataTypeName": {
-											"TypeName": "decimal",
-											"IsComplexType": false,
-											"IsNullable": true,
-											"Precision": 10,
-											"Scale": 2,
-											"Properties": {
-												"HIVE_TYPE_STRING": "decimal"
-											}
-										}
-									}
-								],
-								"ColumnSetEntityName": "a1b4c760-b991-41fe-917e-115b9d0a159a",
-								"Format": {
-									"InputFormat": "org.apache.hadoop.hive.ql.io.parquet.MapredParquetInputFormat",
-									"OutputFormat": "org.apache.hadoop.hive.ql.io.parquet.MapredParquetOutputFormat",
-									"FormatType": "parquet",
-									"SerializeLib": "org.apache.hadoop.hive.ql.io.parquet.serde.ParquetHiveSerDe",
-									"Properties": {
-										"path": "abfss://treinamento@adlstrnsolar99.dfs.core.windows.net/bronze/dboVENDA_ITENS.txt",
-										"FormatTypeSetToDatabaseDefault": false
-									}
-								},
-								"Source": {
-									"Provider": "ADLS",
-									"Location": "abfss://treinamento@adlstrnsolar99.dfs.core.windows.net/bronze/dboVENDA_ITENS.txt",
-									"Properties": {
-										"LinkedServiceName": "asa-trn-99-WorkspaceDefaultStorage",
-										"LocationSetToDatabaseDefault": false
-									}
-								},
-								"Properties": {
-									"textinputformat.record.delimiter": ",",
-									"compression": "{\"type\":\"None\",\"level\":\"optimal\"}",
-									"derivedModelAttributeInfo": "{\"attributeReferences\":{}}"
-								},
-								"Compressed": false,
-								"SerDeInfo": null,
-								"IsStoredAsSubdirectories": false
-							},
-							"Owner": null,
-							"CreateTime": 0,
-							"LastAccessTime": 0,
-							"Retention": 0,
-							"Temporary": false,
-							"IsRewriteEnabled": false,
-							"ViewOriginalText": null,
-							"ViewExpandedText": null,
-							"Origin": {
-								"Type": "SPARK"
-							},
-							"OriginObjectId": null,
-							"IsSharedEntity": false,
-							"PublishStatus": "PUBLISHED",
-							"Properties": {
-								"Description": "",
-								"DisplayFolderInfo": "{\"name\":\"Others\",\"colorCode\":\"\"}",
-								"PrimaryKeys": "",
-								"spark.sql.sources.provider": "parquet",
-								"spark.sql.sources.schema.numParts": "1",
-								"spark.sql.sources.schema.part.0": "{\"type\":\"struct\",\"fields\":[{\"name\":\"NUM_VENDA\",\"type\":\"integer\",\"nullable\":true,\"metadata\":{}},{\"name\":\"NUM_SEQ\",\"type\":\"integer\",\"nullable\":true,\"metadata\":{}},{\"name\":\"ID_PROD\",\"type\":\"integer\",\"nullable\":true,\"metadata\":{}},{\"name\":\"QTDE\",\"type\":\"decimal(10,2)\",\"nullable\":true,\"metadata\":{}},{\"name\":\"VAL_UNIT\",\"type\":\"decimal(10,2)\",\"nullable\":true,\"metadata\":{}},{\"name\":\"VAL_TOTAL\",\"type\":\"decimal(10,2)\",\"nullable\":true,\"metadata\":{}}]}"
-							},
-							"ObjectVersion": 1,
-							"ObjectId": "977592d1-5601-4482-bc8a-5ae78cfd86c3",
-							"Description": ""
-						},
-						"Source": {
-							"Type": "SPARK"
-						}
 					}
 				]
 			},
