@@ -1,0 +1,20 @@
+{
+	"name": "SAIDA_VENDAS_PARQUET_PART",
+	"properties": {
+		"linkedServiceName": {
+			"referenceName": "asa-trn-99-WorkspaceDefaultStorage",
+			"type": "LinkedServiceReference"
+		},
+		"annotations": [],
+		"type": "Parquet",
+		"typeProperties": {
+			"location": {
+				"type": "AzureBlobFSLocation",
+				"folderPath": "gold/",
+				"fileSystem": "treinamento"
+			},
+			"compressionCodec": "snappy"
+		},
+		"schema": []
+	}
+}
