@@ -5,6 +5,9 @@
 			"referenceName": "asa-trn-99-WorkspaceDefaultStorage",
 			"type": "LinkedServiceReference"
 		},
+		"folder": {
+			"name": "RAW"
+		},
 		"annotations": [],
 		"type": "Parquet",
 		"typeProperties": {
