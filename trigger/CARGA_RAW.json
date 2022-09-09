@@ -1,0 +1,17 @@
+{
+	"name": "CARGA_RAW",
+	"properties": {
+		"annotations": [],
+		"runtimeState": "Stopped",
+		"pipelines": [],
+		"type": "ScheduleTrigger",
+		"typeProperties": {
+			"recurrence": {
+				"frequency": "Hour",
+				"interval": 24,
+				"startTime": "2022-09-09T22:37:00",
+				"timeZone": "E. South America Standard Time"
+			}
+		}
+	}
+}
