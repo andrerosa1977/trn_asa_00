@@ -1567,6 +1567,26 @@
 			"dependsOn": []
 		},
 		{
+			"name": "[concat(parameters('workspaceName'), '/13_VW_FATO_VENDAS')]",
+			"type": "Microsoft.Synapse/workspaces/sqlscripts",
+			"apiVersion": "2019-06-01-preview",
+			"properties": {
+				"content": {
+					"query": "CREATE VIEW GOLD.[VW_FATO_VENDAS]\n\tAS \n\tSELECT A.NUM_VENDA,\n\t       A.DATA_VENDA,\n\t\t   A.ID_CLIENTE,\n\t\t   A.ID_VENDEDOR,\n\t\t   A.STATUS,\n\t\t   B.NUM_SEQ,\n\t\t   B.ID_PROD,\n\t\t   B.VAL_UNIT,\n\t\t   B.VAL_TOTAL\n\t\t   \tFROM SILVER.VENDAS A\n\tINNER JOIN SILVER.VENDAS_ITENS B\n\tON A.NUM_VENDA=B.NUM_VENDA\n\n\n",
+					"metadata": {
+						"language": "sql"
+					},
+					"currentConnection": {
+						"databaseName": "lhdw",
+						"poolName": "Built-in"
+					},
+					"resultLimit": 5000
+				},
+				"type": "SqlQuery"
+			},
+			"dependsOn": []
+		},
+		{
 			"name": "[concat(parameters('workspaceName'), '/99_DROP_FORMATO')]",
 			"type": "Microsoft.Synapse/workspaces/sqlscripts",
 			"apiVersion": "2019-06-01-preview",
@@ -2154,24 +2174,6 @@
 			},
 			"dependsOn": [],
 			"location": "southcentralus"
-		},
-		{
-			"name": "[concat(parameters('workspaceName'), '/SQL script 1')]",
-			"type": "Microsoft.Synapse/workspaces/sqlscripts",
-			"apiVersion": "2019-06-01-preview",
-			"properties": {
-				"content": {
-					"query": "CREATE VIEW [dbo].[View]\n\tAS SELECT * FROM [SomeTableOrView]\n",
-					"metadata": {
-						"language": "sql"
-					},
-					"currentConnection": {
-						"databaseName": "lhdw",
-						"poolName": "Built-in"
-					}
-				}
-			},
-			"dependsOn": []
 		}
 	]
 }
