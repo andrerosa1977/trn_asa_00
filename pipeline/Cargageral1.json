@@ -1,0 +1,166 @@
+{
+	"name": "Cargageral1",
+	"properties": {
+		"activities": [
+			{
+				"name": "ForEach_lxc",
+				"type": "ForEach",
+				"dependsOn": [],
+				"userProperties": [],
+				"typeProperties": {
+					"items": {
+						"value": "@pipeline().parameters.cw_items",
+						"type": "Expression"
+					},
+					"activities": [
+						{
+							"name": "Copy_lxc",
+							"type": "Copy",
+							"dependsOn": [],
+							"policy": {
+								"timeout": "0.12:00:00",
+								"retry": 0,
+								"retryIntervalInSeconds": 30,
+								"secureOutput": false,
+								"secureInput": false
+							},
+							"userProperties": [
+								{
+									"name": "Source",
+									"value": "dbo.@{item().source.table}"
+								},
+								{
+									"name": "Destination",
+									"value": "treinamento/bronze/@{item().destination.fileName}"
+								}
+							],
+							"typeProperties": {
+								"source": {
+									"type": "AzureSqlSource",
+									"partitionOption": "None"
+								},
+								"sink": {
+									"type": "ParquetSink",
+									"storeSettings": {
+										"type": "AzureBlobFSWriteSettings"
+									},
+									"formatSettings": {
+										"type": "ParquetWriteSettings"
+									}
+								},
+								"enableStaging": false,
+								"enableSkipIncompatibleRow": true,
+								"validateDataConsistency": false,
+								"logSettings": {
+									"enableCopyActivityLog": true,
+									"copyActivityLogSettings": {
+										"logLevel": "Warning",
+										"enableReliableLogging": false
+									},
+									"logLocationSettings": {
+										"linkedServiceName": {
+											"referenceName": "asa-trn-99-WorkspaceDefaultStorage",
+											"type": "LinkedServiceReference"
+										}
+									}
+								}
+							},
+							"inputs": [
+								{
+									"referenceName": "SourceDataset_lxc",
+									"type": "DatasetReference",
+									"parameters": {
+										"cw_table": "@item().source.table"
+									}
+								}
+							],
+							"outputs": [
+								{
+									"referenceName": "DestinationDataset_lxc",
+									"type": "DatasetReference",
+									"parameters": {
+										"cw_fileName": "@item().destination.fileName"
+									}
+								}
+							]
+						}
+					]
+				}
+			}
+		],
+		"parameters": {
+			"cw_items": {
+				"type": "Array",
+				"defaultValue": [
+					{
+						"source": {
+							"table": "CATEGORIA"
+						},
+						"destination": {
+							"fileName": "dboCATEGORIA.txt"
+						}
+					},
+					{
+						"source": {
+							"table": "CIDADE"
+						},
+						"destination": {
+							"fileName": "dboCIDADE.txt"
+						}
+					},
+					{
+						"source": {
+							"table": "CLIENTE"
+						},
+						"destination": {
+							"fileName": "dboCLIENTE.txt"
+						}
+					},
+					{
+						"source": {
+							"table": "PRODUTOS"
+						},
+						"destination": {
+							"fileName": "dboPRODUTOS.txt"
+						}
+					},
+					{
+						"source": {
+							"table": "UNIDADE"
+						},
+						"destination": {
+							"fileName": "dboUNIDADE.txt"
+						}
+					},
+					{
+						"source": {
+							"table": "VENDA_ITENS"
+						},
+						"destination": {
+							"fileName": "dboVENDA_ITENS.txt"
+						}
+					},
+					{
+						"source": {
+							"table": "VENDAS"
+						},
+						"destination": {
+							"fileName": "dboVENDAS.txt"
+						}
+					},
+					{
+						"source": {
+							"table": "VENDEDORES"
+						},
+						"destination": {
+							"fileName": "dboVENDEDORES.txt"
+						}
+					}
+				]
+			}
+		},
+		"annotations": [],
+		"lastPublishTime": "2022-09-09T13:19:56Z"
+	},
+	"type": "Microsoft.Synapse/workspaces/pipelines"
+}

@@ -1,0 +1,24 @@
+{
+	"name": "Trigger_lxc",
+	"properties": {
+		"annotations": [],
+		"runtimeState": "Started",
+		"pipelines": [
+			{
+				"pipelineReference": {
+					"referenceName": "Cargageral1",
+					"type": "PipelineReference"
+				}
+			}
+		],
+		"type": "ScheduleTrigger",
+		"typeProperties": {
+			"recurrence": {
+				"frequency": "Hour",
+				"interval": 24,
+				"startTime": "2022-09-08T19:54:00Z",
+				"timeZone": "UTC"
+			}
+		}
+	}
+}
