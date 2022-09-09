@@ -1,0 +1,17 @@
+{
+	"name": "13_SELECTCS",
+	"properties": {
+		"content": {
+			"query": "\nSELECT * FROM SILVER.D_CATEGORIA",
+			"metadata": {
+				"language": "sql"
+			},
+			"currentConnection": {
+				"databaseName": "lhdw",
+				"poolName": "Built-in"
+			},
+			"resultLimit": 5000
+		},
+		"type": "SqlQuery"
+	}
+}

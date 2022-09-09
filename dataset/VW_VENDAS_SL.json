@@ -2,15 +2,18 @@
 	"name": "VW_VENDAS_SL",
 	"properties": {
 		"linkedServiceName": {
-			"referenceName": "AzureSynapseAnalytics1",
-			"type": "LinkedServiceReference"
+			"referenceName": "asa-trn-99-WorkspaceDefaultSqlServer",
+			"type": "LinkedServiceReference",
+			"parameters": {
+				"DBName": "database1"
+			}
 		},
 		"annotations": [],
 		"type": "AzureSqlDWTable",
 		"schema": [],
 		"typeProperties": {
-			"schema": "GOLD",
-			"table": "VW_VENDAS"
+			"schema": "",
+			"table": "vendas"
 		}
 	}
 }

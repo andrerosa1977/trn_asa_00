@@ -1,0 +1,24 @@
+{
+	"name": "DF_Categoria",
+	"properties": {
+		"type": "MappingDataFlow",
+		"typeProperties": {
+			"sources": [
+				{
+					"name": "SRCCATEGORIA"
+				}
+			],
+			"sinks": [],
+			"transformations": [],
+			"scriptLines": [
+				"source(allowSchemaDrift: true,",
+				"     validateSchema: false,",
+				"     store: 'synapse',",
+				"     databaseType: 'spark',",
+				"     format: 'table',",
+				"     database: 'Database1',",
+				"     tableName: 'VENDAS') ~> SRCCATEGORIA"
+			]
+		}
+	}
+}
