@@ -1,11 +1,11 @@
 {
-	"name": "01_CRIA SCHEMAS",
+	"name": "99_DROP_FORMATO",
 	"properties": {
 		"folder": {
 			"name": "01_SERVERLESS"
 		},
 		"content": {
-			"query": "CREATE SCHEMA BRONZE\nGO\nCREATE SCHEMA SILVER\nGO\nCREATE SCHEMA GOLD\n",
+			"query": "--VERIFICAR FORMATOS EXISTENTES\nSELECT * FROM sys.external_file_formats;  \n\n--ELIMINAR FORMATO EXISTENTE\nDROP EXTERNAL FILE FORMAT SynapseParquetFormat  ",
 			"metadata": {
 				"language": "sql"
 			},

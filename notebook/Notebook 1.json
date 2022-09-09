@@ -18,14 +18,11 @@
 				"spark.dynamicAllocation.enabled": "true",
 				"spark.dynamicAllocation.minExecutors": "1",
 				"spark.dynamicAllocation.maxExecutors": "4",
-				"spark.autotune.trackingId": "a7cce5f7-8939-4a62-ad7a-f99a7bf5cbfc"
+				"spark.autotune.trackingId": "8202218e-7107-4b75-b24c-699707f6e7e7"
 			}
 		},
 		"metadata": {
 			"saveOutput": true,
-			"synapse_widget": {
-				"version": "0.1"
-			},
 			"enableDebugMode": false,
 			"kernelspec": {
 				"name": "synapse_pyspark",
@@ -41,14 +38,13 @@
 				"endpoint": "https://asa-trn-99.dev.azuresynapse.net/livyApi/versions/2019-11-01-preview/sparkPools/Cluster1",
 				"auth": {
 					"type": "AAD",
-					"authResource": "https://dev.azuresynapse.net",
-					"authHeader": null
+					"authResource": "https://dev.azuresynapse.net"
 				},
 				"sparkVersion": "3.2",
 				"nodeCount": 10,
 				"cores": 4,
 				"memory": 28,
-				"extraHeader": null
+				"automaticScaleJobs": true
 			},
 			"sessionKeepAliveTimeout": 30
 		},
@@ -65,7 +61,6 @@
 					"df = spark.sql(\"SELECT * FROM `Database1`.`D_CATEGORIA`\")\n",
 					"# df.show(10)"
 				],
-				"attachments": null,
 				"execution_count": 3
 			}
 		]

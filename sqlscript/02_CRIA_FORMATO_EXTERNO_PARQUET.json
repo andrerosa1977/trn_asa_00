@@ -1,11 +1,11 @@
 {
-	"name": "01_CRIA SCHEMAS",
+	"name": "02_CRIA_FORMATO_EXTERNO_PARQUET",
 	"properties": {
 		"folder": {
 			"name": "01_SERVERLESS"
 		},
 		"content": {
-			"query": "CREATE SCHEMA BRONZE\nGO\nCREATE SCHEMA SILVER\nGO\nCREATE SCHEMA GOLD\n",
+			"query": "IF NOT EXISTS (SELECT * FROM sys.external_file_formats WHERE name = 'ParquetFormat') \n\tCREATE EXTERNAL FILE FORMAT [ParquetFormat] \n\tWITH ( FORMAT_TYPE = PARQUET)\nGO\n",
 			"metadata": {
 				"language": "sql"
 			},
