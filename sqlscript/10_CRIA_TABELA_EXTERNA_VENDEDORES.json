@@ -1,0 +1,20 @@
+{
+	"name": "10_CRIA_TABELA_EXTERNA_VENDEDORES",
+	"properties": {
+		"folder": {
+			"name": "01_SERVERLESS"
+		},
+		"content": {
+			"query": "CREATE EXTERNAL TABLE SILVER.D_VENDEDORES (\n\t[ID_VENDEDOR] int,\n\t[NOME_VENDEDOR] nvarchar(4000),\n\t[SALARIO] numeric(10,2)\n\t)\n\tWITH (\n\tLOCATION = 'bronze/vendedores/**',\n\tDATA_SOURCE = [treinamento_adlstrnsolar99_dfs_core_windows_net],\n\tFILE_FORMAT = [ParquetFormat]\n\t)\nGO",
+			"metadata": {
+				"language": "sql"
+			},
+			"currentConnection": {
+				"databaseName": "lhdw",
+				"poolName": "Built-in"
+			},
+			"resultLimit": 5000
+		},
+		"type": "SqlQuery"
+	}
+}

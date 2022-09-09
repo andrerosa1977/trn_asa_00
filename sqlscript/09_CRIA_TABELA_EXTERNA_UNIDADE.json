@@ -1,0 +1,20 @@
+{
+	"name": "09_CRIA_TABELA_EXTERNA_UNIDADE",
+	"properties": {
+		"folder": {
+			"name": "01_SERVERLESS"
+		},
+		"content": {
+			"query": "\nCREATE EXTERNAL TABLE SILVER.D_UNIDADE (\n\t[ID_UNIDADE] nvarchar(4000),\n\t[DESC_UNIDADE] nvarchar(4000)\n\t)\n\tWITH (\n\tLOCATION = 'bronze/unidade/**',\n\tDATA_SOURCE = [treinamento_adlstrnsolar99_dfs_core_windows_net],\n\tFILE_FORMAT = [ParquetFormat]\n\t)\nGO\n",
+			"metadata": {
+				"language": "sql"
+			},
+			"currentConnection": {
+				"databaseName": "lhdw",
+				"poolName": "Built-in"
+			},
+			"resultLimit": 5000
+		},
+		"type": "SqlQuery"
+	}
+}

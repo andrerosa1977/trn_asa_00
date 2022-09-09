@@ -1,6 +1,9 @@
 {
-	"name": "SQL script 1",
+	"name": "07_CRIA_EXTERNAL_TABLE_CLIENTE",
 	"properties": {
+		"folder": {
+			"name": "01_SERVERLESS"
+		},
 		"content": {
 			"query": "\nCREATE EXTERNAL TABLE SILVER.D_CLIENTE (\n\t[ID_CLIENTE] int,\n\t[NOME_CLIENTE] nvarchar(4000),\n\t[ENDERECO] nvarchar(4000),\n\t[NUMERO] nvarchar(4000),\n\t[ID_CIDADE] int,\n\t[CEP] nvarchar(4000)\n\t)\n\tWITH (\n\tLOCATION = 'bronze/cliente/**',\n\tDATA_SOURCE = [treinamento_adlstrnsolar99_dfs_core_windows_net],\n\tFILE_FORMAT = [ParquetFormat]\n\t)\nGO\n\n",
 			"metadata": {
