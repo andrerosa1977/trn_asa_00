@@ -1,0 +1,26 @@
+{
+	"name": "CATEGORIA",
+	"properties": {
+		"linkedServiceName": {
+			"referenceName": "AzureOLTP",
+			"type": "LinkedServiceReference"
+		},
+		"annotations": [],
+		"type": "AzureSqlTable",
+		"schema": [
+			{
+				"name": "ID_CATEGORIA",
+				"type": "int",
+				"precision": 10
+			},
+			{
+				"name": "NOME_CATEGORIA",
+				"type": "varchar"
+			}
+		],
+		"typeProperties": {
+			"schema": "dbo",
+			"table": "CATEGORIA"
+		}
+	}
+}

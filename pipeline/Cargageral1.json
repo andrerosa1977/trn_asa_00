@@ -3,89 +3,54 @@
 	"properties": {
 		"activities": [
 			{
-				"name": "ForEach_lxc",
-				"type": "ForEach",
+				"name": "CARGA CATEGORIA",
+				"type": "Copy",
 				"dependsOn": [],
+				"policy": {
+					"timeout": "0.12:00:00",
+					"retry": 0,
+					"retryIntervalInSeconds": 30,
+					"secureOutput": false,
+					"secureInput": false
+				},
 				"userProperties": [],
 				"typeProperties": {
-					"items": {
-						"value": "@pipeline().parameters.cw_items",
-						"type": "Expression"
+					"source": {
+						"type": "AzureSqlSource",
+						"queryTimeout": "02:00:00",
+						"partitionOption": "None"
 					},
-					"activities": [
-						{
-							"name": "Copy_lxc",
-							"type": "Copy",
-							"dependsOn": [],
-							"policy": {
-								"timeout": "0.12:00:00",
-								"retry": 0,
-								"retryIntervalInSeconds": 30,
-								"secureOutput": false,
-								"secureInput": false
-							},
-							"userProperties": [
-								{
-									"name": "Source",
-									"value": "dbo.@{item().source.table}"
-								},
-								{
-									"name": "Destination",
-									"value": "treinamento/bronze/@{item().destination.fileName}"
-								}
-							],
-							"typeProperties": {
-								"source": {
-									"type": "AzureSqlSource",
-									"partitionOption": "None"
-								},
-								"sink": {
-									"type": "ParquetSink",
-									"storeSettings": {
-										"type": "AzureBlobFSWriteSettings"
-									},
-									"formatSettings": {
-										"type": "ParquetWriteSettings"
-									}
-								},
-								"enableStaging": false,
-								"enableSkipIncompatibleRow": true,
-								"validateDataConsistency": false,
-								"logSettings": {
-									"enableCopyActivityLog": true,
-									"copyActivityLogSettings": {
-										"logLevel": "Warning",
-										"enableReliableLogging": false
-									},
-									"logLocationSettings": {
-										"linkedServiceName": {
-											"referenceName": "asa-trn-99-WorkspaceDefaultStorage",
-											"type": "LinkedServiceReference"
-										}
-									}
-								}
-							},
-							"inputs": [
-								{
-									"referenceName": "SourceDataset_lxc",
-									"type": "DatasetReference",
-									"parameters": {
-										"cw_table": "@item().source.table"
-									}
-								}
-							],
-							"outputs": [
-								{
-									"referenceName": "DestinationDataset_lxc",
-									"type": "DatasetReference",
-									"parameters": {
-										"cw_fileName": "@item().destination.fileName"
-									}
-								}
-							]
+					"sink": {
+						"type": "ParquetSink",
+						"storeSettings": {
+							"type": "AzureBlobFSWriteSettings"
+						},
+						"formatSettings": {
+							"type": "ParquetWriteSettings"
 						}
-					]
-				}
+					},
+					"enableStaging": false,
+					"translator": {
+						"type": "TabularTranslator",
+						"typeConversion": true,
+						"typeConversionSettings": {
+							"allowDataTruncation": true,
+							"treatBooleanAsNumber": false
+						}
+					}
+				},
+				"inputs": [
+					{
+						"referenceName": "CATEGORIA",
+						"type": "DatasetReference"
+					}
+				],
+				"outputs": [
+					{
+						"referenceName": "STG_CATEGORIA",
+						"type": "DatasetReference"
+					}
+				]
 			}
 		],
 		"parameters": {
