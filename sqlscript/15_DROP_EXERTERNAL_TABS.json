@@ -1,0 +1,20 @@
+{
+	"name": "15_DROP_EXERTERNAL_TABS",
+	"properties": {
+		"folder": {
+			"name": "01_SERVERLESS"
+		},
+		"content": {
+			"query": "DROP EXTERNAL TABLE SILVER.D_CATEGORIA\nGO\nDROP EXTERNAL TABLE SILVER.D_CIDADE\nGO\nDROP EXTERNAL TABLE SILVER.D_CLIENTE\nGO\nDROP EXTERNAL TABLE SILVER.D_PRODUTOS\nGO\nDROP EXTERNAL TABLE SILVER.D_UNIDADE\nGO\nDROP EXTERNAL TABLE SILVER.D_VENDEDORES\nGO\nDROP EXTERNAL TABLE SILVER.VENDAS\nGO\nDROP EXTERNAL TABLE SILVER.VENDAS_ITENS\nGO\nDROP VIEW SILVER.VW_UNIDADE\nGO\nDROP VIEW GOLD.VW_FATO_VENDAS\nGO",
+			"metadata": {
+				"language": "sql"
+			},
+			"currentConnection": {
+				"databaseName": "lhdw",
+				"poolName": "Built-in"
+			},
+			"resultLimit": 5000
+		},
+		"type": "SqlQuery"
+	}
+}

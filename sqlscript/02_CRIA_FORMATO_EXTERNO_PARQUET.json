@@ -5,7 +5,7 @@
 			"name": "01_SERVERLESS"
 		},
 		"content": {
-			"query": "IF NOT EXISTS (SELECT * FROM sys.external_file_formats WHERE name = 'ParquetFormat') \n\tCREATE EXTERNAL FILE FORMAT [ParquetFormat] \n\tWITH ( FORMAT_TYPE = PARQUET)\nGO\n",
+			"query": "-- CRIA FORMATO PARQUET\nIF NOT EXISTS (SELECT * FROM sys.external_file_formats WHERE name = 'ParquetFormat') \n\tCREATE EXTERNAL FILE FORMAT [ParquetFormat] \n\tWITH ( FORMAT_TYPE = PARQUET)\nGO\n--CRIA FORMATO CSV SKIP CABECALHO\nIF NOT EXISTS (SELECT * FROM sys.external_file_formats WHERE name = 'skipHeader_CSV') \nCREATE EXTERNAL FILE FORMAT skipHeader_CSV\nWITH (FORMAT_TYPE = DELIMITEDTEXT,\n      FORMAT_OPTIONS(\n          FIELD_TERMINATOR = ',',\n          STRING_DELIMITER = '\"',\n          FIRST_ROW = 2, \n          USE_TYPE_DEFAULT = True)\n)\n\n",
 			"metadata": {
 				"language": "sql"
 			},

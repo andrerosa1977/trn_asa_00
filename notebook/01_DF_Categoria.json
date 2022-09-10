@@ -18,80 +18,11 @@
 				"spark.dynamicAllocation.enabled": "true",
 				"spark.dynamicAllocation.minExecutors": "1",
 				"spark.dynamicAllocation.maxExecutors": "4",
-				"spark.autotune.trackingId": "ba2cd4b3-bf5b-4257-a930-cf23de684fb4"
+				"spark.autotune.trackingId": "6e62fa48-a055-4b0c-b474-1eed318b6ec4"
 			}
 		},
 		"metadata": {
 			"saveOutput": true,
-			"synapse_widget": {
-				"version": "0.1",
-				"state": {
-					"a0b317ad-85fc-408a-a087-8e74f83b2a14": {
-						"type": "Synapse.DataFrame",
-						"sync_state": {
-							"table": {
-								"rows": [
-									{
-										"0": "1",
-										"1": "Informática"
-									},
-									{
-										"0": "2",
-										"1": "TV´s"
-									},
-									{
-										"0": "3",
-										"1": "Celulares"
-									},
-									{
-										"0": "4",
-										"1": "Eletrodomesticos"
-									},
-									{
-										"0": "5",
-										"1": "Utilidades do Lar"
-									},
-									{
-										"0": "6",
-										"1": "Teste"
-									}
-								],
-								"schema": [
-									{
-										"key": "0",
-										"name": "ID_CATEGORIA",
-										"type": "int"
-									},
-									{
-										"key": "1",
-										"name": "NOME_CATEGORIA",
-										"type": "string"
-									}
-								],
-								"truncated": false
-							},
-							"isSummary": false,
-							"language": "scala"
-						},
-						"persist_state": {
-							"view": {
-								"type": "details",
-								"chartOptions": {
-									"chartType": "bar",
-									"aggregationType": "sum",
-									"categoryFieldKeys": [
-										"1"
-									],
-									"seriesFieldKeys": [
-										"0"
-									],
-									"isStacked": false
-								}
-							}
-						}
-					}
-				}
-			},
 			"enableDebugMode": false,
 			"kernelspec": {
 				"name": "synapse_pyspark",
@@ -107,14 +38,13 @@
 				"endpoint": "https://asa-trn-99.dev.azuresynapse.net/livyApi/versions/2019-11-01-preview/sparkPools/Cluster1",
 				"auth": {
 					"type": "AAD",
-					"authResource": "https://dev.azuresynapse.net",
-					"authHeader": null
+					"authResource": "https://dev.azuresynapse.net"
 				},
 				"sparkVersion": "3.2",
 				"nodeCount": 10,
 				"cores": 4,
 				"memory": 28,
-				"extraHeader": null
+				"automaticScaleJobs": true
 			},
 			"sessionKeepAliveTimeout": 30
 		},
@@ -129,11 +59,10 @@
 				},
 				"source": [
 					"%%pyspark\r\n",
-					"df = spark.read.load('abfss://treinamento@adlstrnsolar99.dfs.core.windows.net/bronze/dboCATEGORIA.txt', format='parquet')\r\n",
+					"df = spark.read.load('abfss://treinamento@adlstrnsolar99.dfs.core.windows.net/bronze/categoria/dbo.CATEGORIA.parquet', format='parquet')\r\n",
 					"display(df.limit(10))"
 				],
-				"attachments": null,
-				"execution_count": 5
+				"execution_count": 2
 			}
 		]
 	}
