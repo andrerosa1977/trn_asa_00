@@ -1,5 +1,5 @@
 {
-	"name": "Notebook 1",
+	"name": "Notebook 2",
 	"properties": {
 		"nbformat": 4,
 		"nbformat_minor": 2,
@@ -12,13 +12,12 @@
 			"driverCores": 4,
 			"executorMemory": "28g",
 			"executorCores": 4,
-			"numExecutors": 1,
-			"runAsWorkspaceSystemIdentity": false,
+			"numExecutors": 2,
 			"conf": {
-				"spark.dynamicAllocation.enabled": "true",
-				"spark.dynamicAllocation.minExecutors": "1",
-				"spark.dynamicAllocation.maxExecutors": "4",
-				"spark.autotune.trackingId": "9db2d607-14ae-40b9-9676-da58199d162c"
+				"spark.dynamicAllocation.enabled": "false",
+				"spark.dynamicAllocation.minExecutors": "2",
+				"spark.dynamicAllocation.maxExecutors": "2",
+				"spark.autotune.trackingId": "5a7d8b16-8db0-4ffe-8c94-5286f4ef8e71"
 			}
 		},
 		"metadata": {
@@ -29,7 +28,7 @@
 				"display_name": "Synapse PySpark"
 			},
 			"language_info": {
-				"name": "sql"
+				"name": "python"
 			},
 			"a365ComputeOptions": {
 				"id": "/subscriptions/fcdf740b-363d-4924-8de6-a7a7c85fa07f/resourceGroups/trn-synapse-solar-dev/providers/Microsoft.Synapse/workspaces/asa-trn-99/bigDataPools/Cluster1",
@@ -58,10 +57,10 @@
 				},
 				"source": [
 					"%%pyspark\n",
-					"df = spark.sql(\"SELECT * FROM lhdw.SILVER.D_CATEGORIA\")\n",
-					"# df.show(10)"
+					"df = spark.sql(\"SELECT * FROM `default`.`crm`\")\n",
+					"df.show(10)"
 				],
-				"execution_count": 6
+				"execution_count": 16
 			}
 		]
 	}

@@ -1,5 +1,5 @@
 {
-	"name": "03_CRIA_TABELA_SPARK",
+	"name": "03_CRIA_TABELA_SPARK_PARTITION",
 	"properties": {
 		"nbformat": 4,
 		"nbformat_minor": 2,
@@ -17,7 +17,7 @@
 				"spark.dynamicAllocation.enabled": "false",
 				"spark.dynamicAllocation.minExecutors": "2",
 				"spark.dynamicAllocation.maxExecutors": "2",
-				"spark.autotune.trackingId": "228e215a-97a7-4a5c-ba24-59ceb9d7da13"
+				"spark.autotune.trackingId": "59d75cb3-1d13-4e58-bdaf-966d1af1dcaa"
 			}
 		},
 		"metadata": {
@@ -28,7 +28,7 @@
 				"display_name": "Synapse PySpark"
 			},
 			"language_info": {
-				"name": "python"
+				"name": "sql"
 			},
 			"a365ComputeOptions": {
 				"id": "/subscriptions/fcdf740b-363d-4924-8de6-a7a7c85fa07f/resourceGroups/trn-synapse-solar-dev/providers/Microsoft.Synapse/workspaces/asa-trn-99/bigDataPools/Cluster1",
@@ -64,7 +64,7 @@
 					")\r\n",
 					"df.write.mode(\"overwrite\").saveAsTable(\"crm\")"
 				],
-				"execution_count": 6
+				"execution_count": 12
 			},
 			{
 				"cell_type": "code",
@@ -77,12 +77,109 @@
 						"transient": {
 							"deleting": false
 						}
+					},
+					"microsoft": {
+						"language": "python"
 					}
 				},
 				"source": [
-					"df.select(crm)"
+					"%%pyspark\r\n",
+					"df = spark.sql(\"SELECT * FROM `default`.`crm`\")\r\n",
+					"df.show(10)"
 				],
-				"execution_count": 7
+				"execution_count": 17
+			},
+			{
+				"cell_type": "code",
+				"metadata": {
+					"jupyter": {
+						"source_hidden": false,
+						"outputs_hidden": false
+					},
+					"nteract": {
+						"transient": {
+							"deleting": false
+						}
+					},
+					"microsoft": {
+						"language": "python"
+					}
+				},
+				"source": [
+					"%%pyspark\r\n",
+					"##Escreve e salva arquivo Parquet \r\n",
+					"df.write.parquet(\"/bronze/crm/output\")"
+				],
+				"execution_count": 18
+			},
+			{
+				"cell_type": "code",
+				"metadata": {
+					"jupyter": {
+						"source_hidden": false,
+						"outputs_hidden": false
+					},
+					"nteract": {
+						"transient": {
+							"deleting": false
+						}
+					},
+					"microsoft": {
+						"language": "python"
+					}
+				},
+				"source": [
+					"%%pyspark\r\n",
+					"##Escreve e salva arquivo Parquet \"APPEND\"\r\n",
+					"df.write.mode('append').parquet(\"/bronze/crm/output\")"
+				],
+				"execution_count": 21
+			},
+			{
+				"cell_type": "code",
+				"metadata": {
+					"jupyter": {
+						"source_hidden": false,
+						"outputs_hidden": false
+					},
+					"nteract": {
+						"transient": {
+							"deleting": false
+						}
+					},
+					"microsoft": {
+						"language": "python"
+					}
+				},
+				"source": [
+					"%%pyspark\r\n",
+					"##Escreve e salva arquivo Parquet \"Overwrite\"\r\n",
+					"df.write.mode('overwrite').parquet(\"/bronze/crm/output\")"
+				],
+				"execution_count": 22
+			},
+			{
+				"cell_type": "code",
+				"metadata": {
+					"jupyter": {
+						"source_hidden": false,
+						"outputs_hidden": false
+					},
+					"nteract": {
+						"transient": {
+							"deleting": false
+						}
+					},
+					"microsoft": {
+						"language": "python"
+					}
+				},
+				"source": [
+					"%%pyspark\r\n",
+					"##Escreve e salva arquivo Parquet particionado por ano\r\n",
+					"df.write.partitionBy(\"ano\").mode('append').parquet(\"/bronze/crm/output\")"
+				],
+				"execution_count": 24
 			}
 		]
 	}
