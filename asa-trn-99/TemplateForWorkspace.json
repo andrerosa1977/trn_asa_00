@@ -29,15 +29,6 @@
 	},
 	"resources": [
 		{
-			"name": "[concat(parameters('workspaceName'), '/mapvendas')]",
-			"type": "Microsoft.Synapse/workspaces/dataMappers",
-			"apiVersion": "2019-06-01-preview",
-			"properties": {},
-			"dependsOn": [
-				"[concat(variables('workspaceId'), '/linkedServices/asa-trn-99-WorkspaceDefaultStorage')]"
-			]
-		},
-		{
 			"name": "[concat(parameters('workspaceName'), '/01 CARGA RAW')]",
 			"type": "Microsoft.Synapse/workspaces/pipelines",
 			"apiVersion": "2019-06-01-preview",
@@ -1290,34 +1281,24 @@
 			]
 		},
 		{
-			"name": "[concat(parameters('workspaceName'), '/Trigger_lxc')]",
+			"name": "[concat(parameters('workspaceName'), '/CARGA_RAW')]",
 			"type": "Microsoft.Synapse/workspaces/triggers",
 			"apiVersion": "2019-06-01-preview",
 			"properties": {
 				"annotations": [],
-				"runtimeState": "Started",
-				"pipelines": [
-					{
-						"pipelineReference": {
-							"referenceName": "01 CARGA RAW",
-							"type": "PipelineReference"
-						},
-						"parameters": {}
-					}
-				],
+				"runtimeState": "Stopped",
+				"pipelines": [],
 				"type": "ScheduleTrigger",
 				"typeProperties": {
 					"recurrence": {
 						"frequency": "Hour",
 						"interval": 24,
-						"startTime": "2022-09-08T19:54:00Z",
-						"timeZone": "UTC"
+						"startTime": "2022-09-09T22:37:00",
+						"timeZone": "E. South America Standard Time"
 					}
 				}
 			},
-			"dependsOn": [
-				"[concat(variables('workspaceId'), '/pipelines/01 CARGA RAW')]"
-			]
+			"dependsOn": []
 		},
 		{
 			"name": "[concat(parameters('workspaceName'), '/AutoResolveIntegrationRuntime')]",
@@ -1403,7 +1384,7 @@
 					"name": "01_SERVERLESS"
 				},
 				"content": {
-					"query": "IF NOT EXISTS (SELECT * FROM sys.external_file_formats WHERE name = 'ParquetFormat') \n\tCREATE EXTERNAL FILE FORMAT [ParquetFormat] \n\tWITH ( FORMAT_TYPE = PARQUET)\nGO\n",
+					"query": "-- CRIA FORMATO PARQUET\nIF NOT EXISTS (SELECT * FROM sys.external_file_formats WHERE name = 'ParquetFormat') \n\tCREATE EXTERNAL FILE FORMAT [ParquetFormat] \n\tWITH ( FORMAT_TYPE = PARQUET)\nGO\n--CRIA FORMATO CSV SKIP CABECALHO\nIF NOT EXISTS (SELECT * FROM sys.external_file_formats WHERE name = 'skipHeader_CSV') \nCREATE EXTERNAL FILE FORMAT skipHeader_CSV\nWITH (FORMAT_TYPE = DELIMITEDTEXT,\n      FORMAT_OPTIONS(\n          FIELD_TERMINATOR = ',',\n          STRING_DELIMITER = '\"',\n          FIRST_ROW = 2, \n          USE_TYPE_DEFAULT = True)\n)\n\n",
 					"metadata": {
 						"language": "sql"
 					},
@@ -1426,7 +1407,7 @@
 					"name": "01_SERVERLESS"
 				},
 				"content": {
-					"query": "IF NOT EXISTS (SELECT * FROM sys.external_data_sources \nWHERE name = 'treinamento_adlstrnsolar99_dfs_core_windows_net') \n\tCREATE EXTERNAL DATA SOURCE [treinamento_adlstrnsolar99_dfs_core_windows_net] \n\tWITH (\n\t\tLOCATION = 'abfss://treinamento@adlstrnsolar99.dfs.core.windows.net' \n\t)\nGO",
+					"query": "IF NOT EXISTS (SELECT * FROM sys.external_data_sources \nWHERE name = 'treinamento_adlstrnsolar99_dfs_core_windows_net') \n\tCREATE EXTERNAL DATA SOURCE [treinamento_adlstrnsolar99_dfs_core_windows_net] \n\tWITH (\n\t\tLOCATION = 'abfss://treinamento@adlstrnsolar99.dfs.core.windows.net' \n\t)\nGO\n\n--REFERENCIAS\n--https://docs.microsoft.com/pt-br/sql/t-sql/statements/create-external-data-source-transact-sql?view=sql-server-ver16&tabs=dedicated\n",
 					"metadata": {
 						"language": "sql"
 					},
@@ -1472,7 +1453,7 @@
 					"name": "01_SERVERLESS"
 				},
 				"content": {
-					"query": "\n--DROP EXTERNAL TABLE SILVER.D_CATEGORIA\nCREATE EXTERNAL TABLE SILVER.D_CATEGORIA (\n\t[ID_CATEGORIA] int,\n\t[NOME_CATEGORIA] nvarchar(4000)\n\t)\n\tWITH (\n\tLOCATION = 'bronze/categoria/dboCATEGORIA.parquet',\n\tDATA_SOURCE = [treinamento_adlstrnsolar99_dfs_core_windows_net],\n\tFILE_FORMAT = [ParquetFormat]\n\t)\nGO\n\n\n-- SELECT * FROM SILVER.D_CATEGORIA",
+					"query": "\n--DROP EXTERNAL TABLE SILVER.D_CATEGORIA\nCREATE EXTERNAL TABLE SILVER.D_CATEGORIA (\n\t[ID_CATEGORIA] int,\n\t[NOME_CATEGORIA] nvarchar(4000)\n\t)\n\tWITH (\n\tLOCATION = 'bronze/categoria/dbo.CATEGORIA.parquet',\n\tDATA_SOURCE = [treinamento_adlstrnsolar99_dfs_core_windows_net],\n\tFILE_FORMAT = [ParquetFormat]\n\t)\nGO\n\n\n-- SELECT * FROM SILVER.D_CATEGORIA",
 					"metadata": {
 						"language": "sql"
 					},
@@ -1495,7 +1476,7 @@
 					"name": "01_SERVERLESS"
 				},
 				"content": {
-					"query": "\n-- IF NOT EXISTS (SELECT * FROM sys.external_file_formats WHERE name = 'SynapseParquetFormat') \n-- \tCREATE EXTERNAL FILE FORMAT [SynapseParquetFormat] \n-- \tWITH ( FORMAT_TYPE = PARQUET)\n-- GO\n\n-- IF NOT EXISTS (SELECT * FROM sys.external_data_sources WHERE name = 'treinamento_adlstrnsolar99_dfs_core_windows_net') \n-- \tCREATE EXTERNAL DATA SOURCE [treinamento_adlstrnsolar99_dfs_core_windows_net] \n-- \tWITH (\n-- \t\tLOCATION = 'abfss://treinamento@adlstrnsolar99.dfs.core.windows.net' \n-- \t)\n-- GO\n\n\nCREATE EXTERNAL TABLE SILVER.D_CIDADE (\n\t[ID_CIDADE] int,\n\t[NOME_CIDADE] nvarchar(4000),\n\t[UF] nvarchar(4000)\n\t)\n\tWITH (\n\tLOCATION = 'bronze/cidade/dboCIDADE.parquet',\n\tDATA_SOURCE = [treinamento_adlstrnsolar99_dfs_core_windows_net],\n\tFILE_FORMAT = [SynapseParquetFormat]\n\t)\nGO\n",
+					"query": "\n-- IF NOT EXISTS (SELECT * FROM sys.external_file_formats WHERE name = 'SynapseParquetFormat') \n-- \tCREATE EXTERNAL FILE FORMAT [SynapseParquetFormat] \n-- \tWITH ( FORMAT_TYPE = PARQUET)\n-- GO\n\n-- IF NOT EXISTS (SELECT * FROM sys.external_data_sources WHERE name = 'treinamento_adlstrnsolar99_dfs_core_windows_net') \n-- \tCREATE EXTERNAL DATA SOURCE [treinamento_adlstrnsolar99_dfs_core_windows_net] \n-- \tWITH (\n-- \t\tLOCATION = 'abfss://treinamento@adlstrnsolar99.dfs.core.windows.net' \n-- \t)\n-- GO\n\n\nCREATE EXTERNAL TABLE SILVER.D_CIDADE (\n\t[ID_CIDADE] int,\n\t[NOME_CIDADE] nvarchar(4000),\n\t[UF] nvarchar(4000)\n\t)\n\tWITH (\n\tLOCATION = 'bronze/cidade/dbo.CIDADE.parquet',\n\tDATA_SOURCE = [treinamento_adlstrnsolar99_dfs_core_windows_net],\n\tFILE_FORMAT = [ParquetFormat]\n\t)\nGO\n",
 					"metadata": {
 						"language": "sql"
 					},
@@ -1648,12 +1629,15 @@
 			"dependsOn": []
 		},
 		{
-			"name": "[concat(parameters('workspaceName'), '/13_SELECTCS')]",
+			"name": "[concat(parameters('workspaceName'), '/13_VW_FATO_VENDAS')]",
 			"type": "Microsoft.Synapse/workspaces/sqlscripts",
 			"apiVersion": "2019-06-01-preview",
 			"properties": {
+				"folder": {
+					"name": "01_SERVERLESS"
+				},
 				"content": {
-					"query": "\nSELECT * FROM SILVER.D_CATEGORIA",
+					"query": "CREATE VIEW GOLD.[VW_FATO_VENDAS]\n\tAS \n\tSELECT A.NUM_VENDA,\n\t       A.DATA_VENDA,\n\t\t   A.ID_CLIENTE,\n\t\t   A.ID_VENDEDOR,\n\t\t   A.STATUS,\n\t\t   B.NUM_SEQ,\n\t\t   B.ID_PROD,\n\t\t   B.VAL_UNIT,\n\t\t   B.VAL_TOTAL\n\t\t   \tFROM SILVER.VENDAS A\n\tINNER JOIN SILVER.VENDAS_ITENS B\n\tON A.NUM_VENDA=B.NUM_VENDA\n\n\n",
 					"metadata": {
 						"language": "sql"
 					},
@@ -1668,12 +1652,15 @@
 			"dependsOn": []
 		},
 		{
-			"name": "[concat(parameters('workspaceName'), '/13_VW_FATO_VENDAS')]",
+			"name": "[concat(parameters('workspaceName'), '/14_SELECTCS')]",
 			"type": "Microsoft.Synapse/workspaces/sqlscripts",
 			"apiVersion": "2019-06-01-preview",
 			"properties": {
+				"folder": {
+					"name": "01_SERVERLESS"
+				},
 				"content": {
-					"query": "CREATE VIEW GOLD.[VW_FATO_VENDAS]\n\tAS \n\tSELECT A.NUM_VENDA,\n\t       A.DATA_VENDA,\n\t\t   A.ID_CLIENTE,\n\t\t   A.ID_VENDEDOR,\n\t\t   A.STATUS,\n\t\t   B.NUM_SEQ,\n\t\t   B.ID_PROD,\n\t\t   B.VAL_UNIT,\n\t\t   B.VAL_TOTAL\n\t\t   \tFROM SILVER.VENDAS A\n\tINNER JOIN SILVER.VENDAS_ITENS B\n\tON A.NUM_VENDA=B.NUM_VENDA\n\n\n",
+					"query": "\nSELECT TOP 10 * FROM  SILVER.D_CATEGORIA\nGO\nSELECT TOP 10 * FROM  SILVER.D_CIDADE\nGO\nSELECT TOP 10 * FROM  SILVER.D_CLIENTE\nGO\nSELECT TOP 10 * FROM SILVER.D_PRODUTOS\nGO\nSELECT TOP 10 * FROM  SILVER.D_UNIDADE\nGO\nSELECT TOP 10 * FROM  SILVER.D_VENDEDORES\nGO\nSELECT TOP 10 * FROM  SILVER.VENDAS\nGO\nSELECT TOP 10 * FROM SILVER.VENDAS_ITENS\nGO\nSELECT TOP 10 * FROM  SILVER.VW_UNIDADE\nGO\nSELECT TOP 10 * FROM  GOLD.VW_FATO_VENDAS\nGO",
 					"metadata": {
 						"language": "sql"
 					},
@@ -1694,6 +1681,29 @@
 			"properties": {
 				"content": {
 					"query": "-- This is auto-generated code\nCREATE VIEW VW_UNIDADE\nAS\nSELECT\n    TOP 100 *\nFROM\n    OPENROWSET(\n        BULK 'https://adlstrnsolar99.dfs.core.windows.net/treinamento/bronze/unidade/dbo.UNIDADE.parquet',\n        FORMAT = 'PARQUET'\n    ) AS [result]\n",
+					"metadata": {
+						"language": "sql"
+					},
+					"currentConnection": {
+						"databaseName": "lhdw",
+						"poolName": "Built-in"
+					},
+					"resultLimit": 5000
+				},
+				"type": "SqlQuery"
+			},
+			"dependsOn": []
+		},
+		{
+			"name": "[concat(parameters('workspaceName'), '/15_DROP_EXERTERNAL_TABS')]",
+			"type": "Microsoft.Synapse/workspaces/sqlscripts",
+			"apiVersion": "2019-06-01-preview",
+			"properties": {
+				"folder": {
+					"name": "01_SERVERLESS"
+				},
+				"content": {
+					"query": "DROP EXTERNAL TABLE SILVER.D_CATEGORIA\nGO\nDROP EXTERNAL TABLE SILVER.D_CIDADE\nGO\nDROP EXTERNAL TABLE SILVER.D_CLIENTE\nGO\nDROP EXTERNAL TABLE SILVER.D_PRODUTOS\nGO\nDROP EXTERNAL TABLE SILVER.D_UNIDADE\nGO\nDROP EXTERNAL TABLE SILVER.D_VENDEDORES\nGO\nDROP EXTERNAL TABLE SILVER.VENDAS\nGO\nDROP EXTERNAL TABLE SILVER.VENDAS_ITENS\nGO\nDROP VIEW SILVER.VW_UNIDADE\nGO\nDROP VIEW GOLD.VW_FATO_VENDAS\nGO",
 					"metadata": {
 						"language": "sql"
 					},
@@ -1792,80 +1802,11 @@
 						"spark.dynamicAllocation.enabled": "true",
 						"spark.dynamicAllocation.minExecutors": "1",
 						"spark.dynamicAllocation.maxExecutors": "4",
-						"spark.autotune.trackingId": "ba2cd4b3-bf5b-4257-a930-cf23de684fb4"
+						"spark.autotune.trackingId": "6e62fa48-a055-4b0c-b474-1eed318b6ec4"
 					}
 				},
 				"metadata": {
 					"saveOutput": true,
-					"synapse_widget": {
-						"version": "0.1",
-						"state": {
-							"a0b317ad-85fc-408a-a087-8e74f83b2a14": {
-								"type": "Synapse.DataFrame",
-								"sync_state": {
-									"table": {
-										"rows": [
-											{
-												"0": "1",
-												"1": "Informática"
-											},
-											{
-												"0": "2",
-												"1": "TV´s"
-											},
-											{
-												"0": "3",
-												"1": "Celulares"
-											},
-											{
-												"0": "4",
-												"1": "Eletrodomesticos"
-											},
-											{
-												"0": "5",
-												"1": "Utilidades do Lar"
-											},
-											{
-												"0": "6",
-												"1": "Teste"
-											}
-										],
-										"schema": [
-											{
-												"key": "0",
-												"name": "ID_CATEGORIA",
-												"type": "int"
-											},
-											{
-												"key": "1",
-												"name": "NOME_CATEGORIA",
-												"type": "string"
-											}
-										],
-										"truncated": false
-									},
-									"isSummary": false,
-									"language": "scala"
-								},
-								"persist_state": {
-									"view": {
-										"type": "details",
-										"chartOptions": {
-											"chartType": "bar",
-											"aggregationType": "sum",
-											"categoryFieldKeys": [
-												"1"
-											],
-											"seriesFieldKeys": [
-												"0"
-											],
-											"isStacked": false
-										}
-									}
-								}
-							}
-						}
-					},
 					"enableDebugMode": false,
 					"kernelspec": {
 						"name": "synapse_pyspark",
@@ -1881,14 +1822,12 @@
 						"endpoint": "https://asa-trn-99.dev.azuresynapse.net/livyApi/versions/2019-11-01-preview/sparkPools/Cluster1",
 						"auth": {
 							"type": "AAD",
-							"authResource": "https://dev.azuresynapse.net",
-							"authHeader": null
+							"authResource": "https://dev.azuresynapse.net"
 						},
 						"sparkVersion": "3.2",
 						"nodeCount": 10,
 						"cores": 4,
-						"memory": 28,
-						"extraHeader": null
+						"memory": 28
 					},
 					"sessionKeepAliveTimeout": 30
 				},
@@ -1903,12 +1842,11 @@
 						},
 						"source": [
 							"%%pyspark\r\n",
-							"df = spark.read.load('abfss://treinamento@adlstrnsolar99.dfs.core.windows.net/bronze/dboCATEGORIA.txt', format='parquet')\r\n",
+							"df = spark.read.load('abfss://treinamento@adlstrnsolar99.dfs.core.windows.net/bronze/categoria/dbo.CATEGORIA.parquet', format='parquet')\r\n",
 							"display(df.limit(10))"
 						],
-						"attachments": null,
 						"outputs": [],
-						"execution_count": 5
+						"execution_count": 2
 					}
 				]
 			},
