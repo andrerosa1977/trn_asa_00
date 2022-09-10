@@ -1,5 +1,5 @@
 {
-	"name": "Notebook 1",
+	"name": "03_CRIA_TABELA_SPARK",
 	"properties": {
 		"nbformat": 4,
 		"nbformat_minor": 2,
@@ -12,13 +12,12 @@
 			"driverCores": 4,
 			"executorMemory": "28g",
 			"executorCores": 4,
-			"numExecutors": 1,
-			"runAsWorkspaceSystemIdentity": false,
+			"numExecutors": 2,
 			"conf": {
-				"spark.dynamicAllocation.enabled": "true",
-				"spark.dynamicAllocation.minExecutors": "1",
-				"spark.dynamicAllocation.maxExecutors": "4",
-				"spark.autotune.trackingId": "a8ee324a-ac96-42d0-84ac-1bce9c4598d3"
+				"spark.dynamicAllocation.enabled": "false",
+				"spark.dynamicAllocation.minExecutors": "2",
+				"spark.dynamicAllocation.maxExecutors": "2",
+				"spark.autotune.trackingId": "228e215a-97a7-4a5c-ba24-59ceb9d7da13"
 			}
 		},
 		"metadata": {
@@ -29,7 +28,7 @@
 				"display_name": "Synapse PySpark"
 			},
 			"language_info": {
-				"name": "sql"
+				"name": "python"
 			},
 			"a365ComputeOptions": {
 				"id": "/subscriptions/fcdf740b-363d-4924-8de6-a7a7c85fa07f/resourceGroups/trn-synapse-solar-dev/providers/Microsoft.Synapse/workspaces/asa-trn-99/bigDataPools/Cluster1",
@@ -57,11 +56,33 @@
 					}
 				},
 				"source": [
-					"%%pyspark\n",
-					"df = spark.sql(\"SELECT * FROM lhdw.SILVER.D_CATEGORIA\")\n",
-					"# df.show(10)"
+					"%%pyspark\r\n",
+					"df = spark.read.load('abfss://treinamento@adlstrnsolar99.dfs.core.windows.net/bronze/carros/CRM.csv', format='csv',\r\n",
+					"## If header exists uncomment line below\r\n",
+					"delimiter=\";\",\r\n",
+					"header=True\r\n",
+					")\r\n",
+					"df.write.mode(\"overwrite\").saveAsTable(\"crm\")"
 				],
-				"execution_count": 5
+				"execution_count": 6
+			},
+			{
+				"cell_type": "code",
+				"metadata": {
+					"jupyter": {
+						"source_hidden": false,
+						"outputs_hidden": false
+					},
+					"nteract": {
+						"transient": {
+							"deleting": false
+						}
+					}
+				},
+				"source": [
+					"df.select(crm)"
+				],
+				"execution_count": 7
 			}
 		]
 	}
