@@ -1,10 +1,10 @@
 {
-	"name": "02_SPARK_CRM",
+	"name": "03_ETL_CRM",
 	"properties": {
 		"activities": [
 			{
-				"name": "03_CRIA_TABELA_SPARK_PARTITION",
-				"type": "SynapseNotebook",
+				"name": "Data flow1",
+				"type": "ExecuteDataFlow",
 				"dependsOn": [],
 				"policy": {
 					"timeout": "0.12:00:00",
@@ -15,11 +15,15 @@
 				},
 				"userProperties": [],
 				"typeProperties": {
-					"notebook": {
-						"referenceName": "03_CRIA_TABELA_SPARK_PARTITION",
-						"type": "NotebookReference"
+					"dataflow": {
+						"referenceName": "CARGA_CRM",
+						"type": "DataFlowReference"
 					},
-					"snapshot": true
+					"compute": {
+						"coreCount": 8,
+						"computeType": "General"
+					},
+					"traceLevel": "Fine"
 				}
 			}
 		],

@@ -17,7 +17,7 @@
 				"spark.dynamicAllocation.enabled": "false",
 				"spark.dynamicAllocation.minExecutors": "2",
 				"spark.dynamicAllocation.maxExecutors": "2",
-				"spark.autotune.trackingId": "5a7d8b16-8db0-4ffe-8c94-5286f4ef8e71"
+				"spark.autotune.trackingId": "4f646008-3a06-4ad6-a20c-dc4fb8e2e2f4"
 			}
 		},
 		"metadata": {
@@ -60,7 +60,7 @@
 					"df = spark.sql(\"SELECT * FROM `default`.`crm`\")\n",
 					"df.show(10)"
 				],
-				"execution_count": 16
+				"execution_count": 1
 			}
 		]
 	}

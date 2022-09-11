@@ -1,0 +1,29 @@
+{
+	"name": "CRM",
+	"properties": {
+		"linkedServiceName": {
+			"referenceName": "asa-trn-99-WorkspaceDefaultStorage",
+			"type": "LinkedServiceReference"
+		},
+		"annotations": [],
+		"type": "DelimitedText",
+		"typeProperties": {
+			"location": {
+				"type": "AzureBlobFSLocation",
+				"fileName": "CRM.csv",
+				"folderPath": "bronze/carros",
+				"fileSystem": "treinamento"
+			},
+			"columnDelimiter": ";",
+			"escapeChar": "\\",
+			"firstRowAsHeader": true,
+			"quoteChar": "\""
+		},
+		"schema": [
+			{
+				"name": "id;primeiro_nome;ultimo_nome;email;sexo;cidade;pais;codigo_pais;Time_zone;empresa;profissao;etnia;idioma;montadora;carro;ano;nascimento",
+				"type": "String"
+			}
+		]
+	}
+}

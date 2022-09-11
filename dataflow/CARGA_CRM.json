@@ -1,0 +1,27 @@
+{
+	"name": "CARGA_CRM",
+	"properties": {
+		"type": "MappingDataFlow",
+		"typeProperties": {
+			"sources": [
+				{
+					"dataset": {
+						"referenceName": "CRM",
+						"type": "DatasetReference"
+					},
+					"name": "SRCCRM"
+				}
+			],
+			"sinks": [],
+			"transformations": [],
+			"scriptLines": [
+				"source(output(",
+				"          {id;primeiro_nome;ultimo_nome;email;sexo;cidade;pais;codigo_pais;Time_zone;empresa;profissao;etnia;idioma;montadora;carro;ano;nascimento} as string",
+				"     ),",
+				"     allowSchemaDrift: true,",
+				"     validateSchema: false,",
+				"     ignoreNoFilesFound: false) ~> SRCCRM"
+			]
+		}
+	}
+}
