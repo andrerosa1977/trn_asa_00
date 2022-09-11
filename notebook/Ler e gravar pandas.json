@@ -20,7 +20,7 @@
 				"spark.dynamicAllocation.enabled": "false",
 				"spark.dynamicAllocation.minExecutors": "2",
 				"spark.dynamicAllocation.maxExecutors": "2",
-				"spark.autotune.trackingId": "987b576b-6f33-4ceb-8da1-2fda5c83b4e1"
+				"spark.autotune.trackingId": "a4e565c5-898f-4b86-8577-b5d544caab72"
 			}
 		},
 		"metadata": {
@@ -76,7 +76,7 @@
 					"\r\n",
 					""
 				],
-				"execution_count": 1
+				"execution_count": 2
 			},
 			{
 				"cell_type": "markdown",
@@ -107,7 +107,7 @@
 				"source": [
 					"df.to_csv('abfss://treinamento@adlstrnsolar99.dfs.core.windows.net/bronze/carros/saida/CRMfull.csv')"
 				],
-				"execution_count": 17
+				"execution_count": null
 			},
 			{
 				"cell_type": "markdown",
@@ -139,7 +139,7 @@
 					"df.to_csv('abfss://treinamento@adlstrnsolar99.dfs.core.windows.net/bronze/carros/saida/CRMfiltro.csv',\r\n",
 					"columns=['id','primeiro_nome','pais','ano'])"
 				],
-				"execution_count": 21
+				"execution_count": null
 			},
 			{
 				"cell_type": "code",
