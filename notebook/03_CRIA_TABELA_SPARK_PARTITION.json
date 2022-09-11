@@ -42,8 +42,7 @@
 				"sparkVersion": "3.2",
 				"nodeCount": 10,
 				"cores": 4,
-				"memory": 28,
-				"automaticScaleJobs": true
+				"memory": 28
 			},
 			"sessionKeepAliveTimeout": 30
 		},
