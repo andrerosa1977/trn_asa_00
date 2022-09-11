@@ -1,0 +1,164 @@
+{
+	"name": "Ler e gravar pandas",
+	"properties": {
+		"folder": {
+			"name": "Pandas"
+		},
+		"nbformat": 4,
+		"nbformat_minor": 2,
+		"bigDataPool": {
+			"referenceName": "Cluster1",
+			"type": "BigDataPoolReference"
+		},
+		"sessionProperties": {
+			"driverMemory": "28g",
+			"driverCores": 4,
+			"executorMemory": "28g",
+			"executorCores": 4,
+			"numExecutors": 2,
+			"conf": {
+				"spark.dynamicAllocation.enabled": "false",
+				"spark.dynamicAllocation.minExecutors": "2",
+				"spark.dynamicAllocation.maxExecutors": "2",
+				"spark.autotune.trackingId": "ec70716d-baf0-4d80-a69d-c121c4538bfe"
+			}
+		},
+		"metadata": {
+			"saveOutput": true,
+			"enableDebugMode": false,
+			"kernelspec": {
+				"name": "synapse_pyspark",
+				"display_name": "Synapse PySpark"
+			},
+			"language_info": {
+				"name": "python"
+			},
+			"a365ComputeOptions": {
+				"id": "/subscriptions/fcdf740b-363d-4924-8de6-a7a7c85fa07f/resourceGroups/trn-synapse-solar-dev/providers/Microsoft.Synapse/workspaces/asa-trn-99/bigDataPools/Cluster1",
+				"name": "Cluster1",
+				"type": "Spark",
+				"endpoint": "https://asa-trn-99.dev.azuresynapse.net/livyApi/versions/2019-11-01-preview/sparkPools/Cluster1",
+				"auth": {
+					"type": "AAD",
+					"authResource": "https://dev.azuresynapse.net"
+				},
+				"sparkVersion": "3.2",
+				"nodeCount": 10,
+				"cores": 4,
+				"memory": 28,
+				"automaticScaleJobs": true
+			},
+			"sessionKeepAliveTimeout": 30
+		},
+		"cells": [
+			{
+				"cell_type": "markdown",
+				"metadata": {
+					"nteract": {
+						"transient": {
+							"deleting": false
+						}
+					}
+				},
+				"source": [
+					"#### Ler/gravar dados na conta de armazenamento padrão do ADLS do workspace do Synapse\r\n",
+					"Ler arquivo de dados do URI do Azure Data Lake Storage Gen2 padrão"
+				]
+			},
+			{
+				"cell_type": "code",
+				"source": [
+					"import pandas\r\n",
+					"\r\n",
+					"df = pandas.read_csv('abfss://treinamento@adlstrnsolar99.dfs.core.windows.net/bronze/carros/CRM.csv',\r\n",
+					"delimiter=\";\")\r\n",
+					"print(df)\r\n",
+					"\r\n",
+					""
+				],
+				"execution_count": 13
+			},
+			{
+				"cell_type": "markdown",
+				"metadata": {
+					"nteract": {
+						"transient": {
+							"deleting": false
+						}
+					}
+				},
+				"source": [
+					"#### #Escreve arquivo csv, completo"
+				]
+			},
+			{
+				"cell_type": "code",
+				"metadata": {
+					"jupyter": {
+						"source_hidden": false,
+						"outputs_hidden": false
+					},
+					"nteract": {
+						"transient": {
+							"deleting": false
+						}
+					}
+				},
+				"source": [
+					"df.to_csv('abfss://treinamento@adlstrnsolar99.dfs.core.windows.net/bronze/carros/saida/CRMfull.csv')"
+				],
+				"execution_count": 17
+			},
+			{
+				"cell_type": "markdown",
+				"metadata": {
+					"nteract": {
+						"transient": {
+							"deleting": false
+						}
+					}
+				},
+				"source": [
+					"#### #Escreve arquivo csv, colunas selecionadas"
+				]
+			},
+			{
+				"cell_type": "code",
+				"metadata": {
+					"jupyter": {
+						"source_hidden": false,
+						"outputs_hidden": false
+					},
+					"nteract": {
+						"transient": {
+							"deleting": false
+						}
+					}
+				},
+				"source": [
+					"df.to_csv('abfss://treinamento@adlstrnsolar99.dfs.core.windows.net/bronze/carros/saida/CRMfiltro.csv',\r\n",
+					"columns=['id','primeiro_nome','pais','ano'])"
+				],
+				"execution_count": 21
+			},
+			{
+				"cell_type": "code",
+				"metadata": {
+					"jupyter": {
+						"source_hidden": false,
+						"outputs_hidden": false
+					},
+					"nteract": {
+						"transient": {
+							"deleting": false
+						}
+					}
+				},
+				"source": [
+					""
+				],
+				"execution_count": null
+			}
+		]
+	}
+}
