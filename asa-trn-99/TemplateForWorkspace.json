@@ -511,6 +511,97 @@
 			]
 		},
 		{
+			"name": "[concat(parameters('workspaceName'), '/02_SPARK_CRM')]",
+			"type": "Microsoft.Synapse/workspaces/pipelines",
+			"apiVersion": "2019-06-01-preview",
+			"properties": {
+				"activities": [
+					{
+						"name": "03_CRIA_TABELA_SPARK_PARTITION",
+						"type": "SynapseNotebook",
+						"dependsOn": [],
+						"policy": {
+							"timeout": "0.12:00:00",
+							"retry": 0,
+							"retryIntervalInSeconds": 30,
+							"secureOutput": false,
+							"secureInput": false
+						},
+						"userProperties": [],
+						"typeProperties": {
+							"notebook": {
+								"referenceName": "03_CRIA_TABELA_SPARK_PARTITION",
+								"type": "NotebookReference"
+							},
+							"snapshot": true,
+							"conf": {
+								"spark.dynamicAllocation.enabled": null,
+								"spark.dynamicAllocation.minExecutors": null,
+								"spark.dynamicAllocation.maxExecutors": null
+							},
+							"numExecutors": null
+						}
+					}
+				],
+				"policy": {
+					"elapsedTimeMetric": {},
+					"cancelAfter": {}
+				},
+				"annotations": []
+			},
+			"dependsOn": [
+				"[concat(variables('workspaceId'), '/notebooks/03_CRIA_TABELA_SPARK_PARTITION')]"
+			]
+		},
+		{
+			"name": "[concat(parameters('workspaceName'), '/03_ETL_CRM')]",
+			"type": "Microsoft.Synapse/workspaces/pipelines",
+			"apiVersion": "2019-06-01-preview",
+			"properties": {
+				"activities": [
+					{
+						"name": "Data flow1",
+						"type": "ExecuteDataFlow",
+						"dependsOn": [],
+						"policy": {
+							"timeout": "0.12:00:00",
+							"retry": 0,
+							"retryIntervalInSeconds": 30,
+							"secureOutput": false,
+							"secureInput": false
+						},
+						"userProperties": [],
+						"typeProperties": {
+							"dataflow": {
+								"referenceName": "CARGA_CRM",
+								"type": "DataFlowReference",
+								"parameters": {},
+								"datasetParameters": {
+									"source1": {},
+									"sink1": {},
+									"sink2": {}
+								}
+							},
+							"staging": {},
+							"compute": {
+								"coreCount": 8,
+								"computeType": "General"
+							},
+							"traceLevel": "Fine"
+						}
+					}
+				],
+				"policy": {
+					"elapsedTimeMetric": {},
+					"cancelAfter": {}
+				},
+				"annotations": []
+			},
+			"dependsOn": [
+				"[concat(variables('workspaceId'), '/dataflows/CARGA_CRM')]"
+			]
+		},
+		{
 			"name": "[concat(parameters('workspaceName'), '/CATEGORIA')]",
 			"type": "Microsoft.Synapse/workspaces/datasets",
 			"apiVersion": "2019-06-01-preview",
@@ -631,6 +722,138 @@
 			},
 			"dependsOn": [
 				"[concat(variables('workspaceId'), '/linkedServices/AzureOLTP')]"
+			]
+		},
+		{
+			"name": "[concat(parameters('workspaceName'), '/CRMATE170')]",
+			"type": "Microsoft.Synapse/workspaces/datasets",
+			"apiVersion": "2019-06-01-preview",
+			"properties": {
+				"linkedServiceName": {
+					"referenceName": "asa-trn-99-WorkspaceDefaultStorage",
+					"type": "LinkedServiceReference"
+				},
+				"annotations": [],
+				"type": "Parquet",
+				"typeProperties": {
+					"location": {
+						"type": "AzureBlobFSLocation",
+						"folderPath": "bronze/",
+						"fileSystem": "treinamento"
+					},
+					"compressionCodec": "snappy"
+				},
+				"schema": [
+					{
+						"name": "ID_CATEGORIA",
+						"type": "INT32"
+					},
+					{
+						"name": "NOME_CATEGORIA",
+						"type": "UTF8"
+					}
+				]
+			},
+			"dependsOn": [
+				"[concat(variables('workspaceId'), '/linkedServices/asa-trn-99-WorkspaceDefaultStorage')]"
+			]
+		},
+		{
+			"name": "[concat(parameters('workspaceName'), '/CRM_CSV')]",
+			"type": "Microsoft.Synapse/workspaces/datasets",
+			"apiVersion": "2019-06-01-preview",
+			"properties": {
+				"linkedServiceName": {
+					"referenceName": "asa-trn-99-WorkspaceDefaultStorage",
+					"type": "LinkedServiceReference"
+				},
+				"annotations": [],
+				"type": "DelimitedText",
+				"typeProperties": {
+					"location": {
+						"type": "AzureBlobFSLocation",
+						"fileName": "CRM.csv",
+						"folderPath": "bronze/carros",
+						"fileSystem": "treinamento"
+					},
+					"columnDelimiter": ";",
+					"escapeChar": "\\",
+					"firstRowAsHeader": true,
+					"quoteChar": "\""
+				},
+				"schema": [
+					{
+						"name": "id",
+						"type": "String"
+					},
+					{
+						"name": "primeiro_nome",
+						"type": "String"
+					},
+					{
+						"name": "ultimo_nome",
+						"type": "String"
+					},
+					{
+						"name": "email",
+						"type": "String"
+					},
+					{
+						"name": "sexo",
+						"type": "String"
+					},
+					{
+						"name": "cidade",
+						"type": "String"
+					},
+					{
+						"name": "pais",
+						"type": "String"
+					},
+					{
+						"name": "codigo_pais",
+						"type": "String"
+					},
+					{
+						"name": "Time_zone",
+						"type": "String"
+					},
+					{
+						"name": "empresa",
+						"type": "String"
+					},
+					{
+						"name": "profissao",
+						"type": "String"
+					},
+					{
+						"name": "etnia",
+						"type": "String"
+					},
+					{
+						"name": "idioma",
+						"type": "String"
+					},
+					{
+						"name": "montadora",
+						"type": "String"
+					},
+					{
+						"name": "carro",
+						"type": "String"
+					},
+					{
+						"name": "ano",
+						"type": "String"
+					},
+					{
+						"name": "nascimento",
+						"type": "String"
+					}
+				]
+			},
+			"dependsOn": [
+				"[concat(variables('workspaceId'), '/linkedServices/asa-trn-99-WorkspaceDefaultStorage')]"
 			]
 		},
 		{
@@ -1200,6 +1423,39 @@
 			]
 		},
 		{
+			"name": "[concat(parameters('workspaceName'), '/crmacima1970')]",
+			"type": "Microsoft.Synapse/workspaces/datasets",
+			"apiVersion": "2019-06-01-preview",
+			"properties": {
+				"linkedServiceName": {
+					"referenceName": "asa-trn-99-WorkspaceDefaultStorage",
+					"type": "LinkedServiceReference"
+				},
+				"annotations": [],
+				"type": "DelimitedText",
+				"typeProperties": {
+					"location": {
+						"type": "AzureBlobFSLocation",
+						"folderPath": "bronze",
+						"fileSystem": "treinamento"
+					},
+					"columnDelimiter": ",",
+					"escapeChar": "\\",
+					"firstRowAsHeader": true,
+					"quoteChar": "\""
+				},
+				"schema": [
+					{
+						"name": "id;primeiro_nome;ultimo_nome;email;sexo;cidade;pais;codigo_pais;Time_zone;empresa;profissao;etnia;idioma;montadora;carro;ano;nascimento",
+						"type": "String"
+					}
+				]
+			},
+			"dependsOn": [
+				"[concat(variables('workspaceId'), '/linkedServices/asa-trn-99-WorkspaceDefaultStorage')]"
+			]
+		},
+		{
 			"name": "[concat(parameters('workspaceName'), '/AzureOLTP')]",
 			"type": "Microsoft.Synapse/workspaces/linkedServices",
 			"apiVersion": "2019-06-01-preview",
@@ -1318,6 +1574,125 @@
 				}
 			},
 			"dependsOn": []
+		},
+		{
+			"name": "[concat(parameters('workspaceName'), '/CARGA_CRM')]",
+			"type": "Microsoft.Synapse/workspaces/dataflows",
+			"apiVersion": "2019-06-01-preview",
+			"properties": {
+				"type": "MappingDataFlow",
+				"typeProperties": {
+					"sources": [
+						{
+							"dataset": {
+								"referenceName": "CRM_CSV",
+								"type": "DatasetReference"
+							},
+							"name": "source1"
+						}
+					],
+					"sinks": [
+						{
+							"dataset": {
+								"referenceName": "CRMATE170",
+								"type": "DatasetReference"
+							},
+							"name": "sink1",
+							"rejectedDataLinkedService": {
+								"referenceName": "asa-trn-99-WorkspaceDefaultStorage",
+								"type": "LinkedServiceReference"
+							}
+						},
+						{
+							"dataset": {
+								"referenceName": "crmacima1970",
+								"type": "DatasetReference"
+							},
+							"name": "sink2",
+							"rejectedDataLinkedService": {
+								"referenceName": "asa-trn-99-WorkspaceDefaultStorage",
+								"type": "LinkedServiceReference"
+							}
+						}
+					],
+					"transformations": [
+						{
+							"name": "select1"
+						},
+						{
+							"name": "ATE1970"
+						}
+					],
+					"scriptLines": [
+						"source(output(",
+						"          id as string,",
+						"          primeiro_nome as string,",
+						"          ultimo_nome as string,",
+						"          email as string,",
+						"          sexo as string,",
+						"          cidade as string,",
+						"          pais as string,",
+						"          codigo_pais as string,",
+						"          Time_zone as string,",
+						"          empresa as string,",
+						"          profissao as string,",
+						"          etnia as string,",
+						"          idioma as string,",
+						"          montadora as string,",
+						"          carro as string,",
+						"          ano as integer,",
+						"          nascimento as date",
+						"     ),",
+						"     allowSchemaDrift: true,",
+						"     validateSchema: false,",
+						"     ignoreNoFilesFound: false) ~> source1",
+						"source1 select(mapColumn(",
+						"          primeiro_nome,",
+						"          ultimo_nome,",
+						"          pais,",
+						"          carro,",
+						"          ano",
+						"     ),",
+						"     skipDuplicateMapInputs: true,",
+						"     skipDuplicateMapOutputs: true) ~> select1",
+						"select1 split(ano<=1970,",
+						"     ano>1970,",
+						"     disjoint: false) ~> ATE1970@(ATE1970, ACIMA1970)",
+						"ATE1970@ATE1970 sink(allowSchemaDrift: true,",
+						"     validateSchema: false,",
+						"     input(",
+						"          ID_CATEGORIA as integer,",
+						"          NOME_CATEGORIA as string",
+						"     ),",
+						"     format: 'parquet',",
+						"     partitionFileNames:['crmate1970.parquet'],",
+						"     umask: 0022,",
+						"     preCommands: [],",
+						"     postCommands: [],",
+						"     skipDuplicateMapInputs: true,",
+						"     skipDuplicateMapOutputs: true,",
+						"     partitionBy('hash', 1)) ~> sink1",
+						"ATE1970@ACIMA1970 sink(allowSchemaDrift: true,",
+						"     validateSchema: false,",
+						"     input(",
+						"          {id;primeiro_nome;ultimo_nome;email;sexo;cidade;pais;codigo_pais;Time_zone;empresa;profissao;etnia;idioma;montadora;carro;ano;nascimento} as string",
+						"     ),",
+						"     partitionFileNames:['crmacima1970'],",
+						"     umask: 0022,",
+						"     preCommands: [],",
+						"     postCommands: [],",
+						"     skipDuplicateMapInputs: true,",
+						"     skipDuplicateMapOutputs: true,",
+						"     partitionBy('hash', 1)) ~> sink2"
+					]
+				}
+			},
+			"dependsOn": [
+				"[concat(variables('workspaceId'), '/datasets/CRM_CSV')]",
+				"[concat(variables('workspaceId'), '/datasets/CRMATE170')]",
+				"[concat(variables('workspaceId'), '/linkedServices/asa-trn-99-WorkspaceDefaultStorage')]",
+				"[concat(variables('workspaceId'), '/datasets/crmacima1970')]"
+			]
 		},
 		{
 			"name": "[concat(parameters('workspaceName'), '/WorkspaceSystemIdentity')]",
@@ -1913,7 +2288,7 @@
 						"spark.dynamicAllocation.enabled": "true",
 						"spark.dynamicAllocation.minExecutors": "1",
 						"spark.dynamicAllocation.maxExecutors": "4",
-						"spark.autotune.trackingId": "0a423052-c6a4-4db3-bfcb-70e4db595bef"
+						"spark.autotune.trackingId": "2f8cc671-72c5-4533-aa6f-dedb7434081b"
 					}
 				},
 				"metadata": {
@@ -1960,7 +2335,7 @@
 							"display(df.limit(10))"
 						],
 						"outputs": [],
-						"execution_count": 1
+						"execution_count": 2
 					}
 				]
 			},
@@ -2447,7 +2822,7 @@
 						"spark.dynamicAllocation.enabled": "false",
 						"spark.dynamicAllocation.minExecutors": "2",
 						"spark.dynamicAllocation.maxExecutors": "2",
-						"spark.autotune.trackingId": "b60aeed9-09ab-4255-aaec-0db57b48418a"
+						"spark.autotune.trackingId": "ae153538-2c1a-420c-ab25-537f4ff7703b"
 					}
 				},
 				"metadata": {
@@ -2472,8 +2847,7 @@
 						"sparkVersion": "3.2",
 						"nodeCount": 10,
 						"cores": 4,
-						"memory": 28,
-						"automaticScaleJobs": true
+						"memory": 28
 					},
 					"sessionKeepAliveTimeout": 30
 				},
@@ -2494,7 +2868,6 @@
 					},
 					{
 						"cell_type": "code",
-						"metadata": {},
 						"source": [
 							"import pandas\r\n",
 							"\r\n",
@@ -2505,7 +2878,7 @@
 							""
 						],
 						"outputs": [],
-						"execution_count": 13
+						"execution_count": 2
 					},
 					{
 						"cell_type": "markdown",
@@ -2537,7 +2910,7 @@
 							"df.to_csv('abfss://treinamento@adlstrnsolar99.dfs.core.windows.net/bronze/carros/saida/CRMfull.csv')"
 						],
 						"outputs": [],
-						"execution_count": 17
+						"execution_count": null
 					},
 					{
 						"cell_type": "markdown",
@@ -2570,7 +2943,7 @@
 							"columns=['id','primeiro_nome','pais','ano'])"
 						],
 						"outputs": [],
-						"execution_count": 21
+						"execution_count": null
 					},
 					{
 						"cell_type": "code",
@@ -2687,7 +3060,7 @@
 						"spark.dynamicAllocation.enabled": "false",
 						"spark.dynamicAllocation.minExecutors": "2",
 						"spark.dynamicAllocation.maxExecutors": "2",
-						"spark.autotune.trackingId": "93b514f3-c949-4fcf-9fd0-655fec85eb62"
+						"spark.autotune.trackingId": "4f646008-3a06-4ad6-a20c-dc4fb8e2e2f4"
 					}
 				},
 				"metadata": {
@@ -2712,8 +3085,7 @@
 						"sparkVersion": "3.2",
 						"nodeCount": 10,
 						"cores": 4,
-						"memory": 28,
-						"automaticScaleJobs": true
+						"memory": 28
 					},
 					"sessionKeepAliveTimeout": 30
 				},
@@ -2731,7 +3103,7 @@
 							"df.show(10)"
 						],
 						"outputs": [],
-						"execution_count": 16
+						"execution_count": 1
 					}
 				]
 			},
@@ -2761,6 +3133,25 @@
 			},
 			"dependsOn": [],
 			"location": "southcentralus"
+		},
+		{
+			"name": "[concat(parameters('workspaceName'), '/SQL script 4')]",
+			"type": "Microsoft.Synapse/workspaces/sqlscripts",
+			"apiVersion": "2019-06-01-preview",
+			"properties": {
+				"content": {
+					"query": "-- This is auto-generated code\nSELECT\n    TOP 100 *\nFROM\n    OPENROWSET(\n        BULK 'https://adlstrnsolar99.dfs.core.windows.net/treinamento/bronze/crmate1970.parquet',\n        FORMAT = 'PARQUET'\n    ) AS [result]\r\n",
+					"metadata": {
+						"language": "sql"
+					},
+					"currentConnection": {
+						"name": "master",
+						"type": "SqlOnDemand"
+					}
+				},
+				"type": "SqlQuery"
+			},
+			"dependsOn": []
 		}
 	]
 }
