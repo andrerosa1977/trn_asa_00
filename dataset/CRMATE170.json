@@ -1,0 +1,29 @@
+{
+	"name": "CRMATE170",
+	"properties": {
+		"linkedServiceName": {
+			"referenceName": "asa-trn-99-WorkspaceDefaultStorage",
+			"type": "LinkedServiceReference"
+		},
+		"annotations": [],
+		"type": "Parquet",
+		"typeProperties": {
+			"location": {
+				"type": "AzureBlobFSLocation",
+				"folderPath": "bronze/",
+				"fileSystem": "treinamento"
+			},
+			"compressionCodec": "snappy"
+		},
+		"schema": [
+			{
+				"name": "ID_CATEGORIA",
+				"type": "INT32"
+			},
+			{
+				"name": "NOME_CATEGORIA",
+				"type": "UTF8"
+			}
+		]
+	}
+}

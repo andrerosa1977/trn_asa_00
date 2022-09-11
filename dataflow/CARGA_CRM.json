@@ -6,30 +6,103 @@
 			"sources": [
 				{
 					"dataset": {
-						"referenceName": "CRM",
+						"referenceName": "CRM_CSV",
 						"type": "DatasetReference"
 					},
 					"name": "source1"
 				}
 			],
-			"sinks": [],
+			"sinks": [
+				{
+					"dataset": {
+						"referenceName": "CRMATE170",
+						"type": "DatasetReference"
+					},
+					"name": "sink1",
+					"rejectedDataLinkedService": {
+						"referenceName": "asa-trn-99-WorkspaceDefaultStorage",
+						"type": "LinkedServiceReference"
+					}
+				},
+				{
+					"dataset": {
+						"referenceName": "crmacima1970",
+						"type": "DatasetReference"
+					},
+					"name": "sink2",
+					"rejectedDataLinkedService": {
+						"referenceName": "asa-trn-99-WorkspaceDefaultStorage",
+						"type": "LinkedServiceReference"
+					}
+				}
+			],
 			"transformations": [
 				{
 					"name": "select1"
+				},
+				{
+					"name": "ATE1970"
 				}
 			],
 			"scriptLines": [
 				"source(output(",
-				"          {id;primeiro_nome;ultimo_nome;email;sexo;cidade;pais;codigo_pais;Time_zone;empresa;profissao;etnia;idioma;montadora;carro;ano;nascimento} as string",
+				"          id as string,",
+				"          primeiro_nome as string,",
+				"          ultimo_nome as string,",
+				"          email as string,",
+				"          sexo as string,",
+				"          cidade as string,",
+				"          pais as string,",
+				"          codigo_pais as string,",
+				"          Time_zone as string,",
+				"          empresa as string,",
+				"          profissao as string,",
+				"          etnia as string,",
+				"          idioma as string,",
+				"          montadora as string,",
+				"          carro as string,",
+				"          ano as integer,",
+				"          nascimento as date",
 				"     ),",
 				"     allowSchemaDrift: true,",
 				"     validateSchema: false,",
 				"     ignoreNoFilesFound: false) ~> source1",
 				"source1 select(mapColumn(",
-				"          {id;primeiro_nome;ultimo_nome;email;sexo;cidade;pais;codigo_pais;Time_zone;empresa;profissao;etnia;idioma;montadora;carro;ano;nascimento}",
+				"          primeiro_nome,",
+				"          ultimo_nome,",
+				"          pais,",
+				"          carro,",
+				"          ano",
 				"     ),",
 				"     skipDuplicateMapInputs: true,",
-				"     skipDuplicateMapOutputs: true) ~> select1"
+				"     skipDuplicateMapOutputs: true) ~> select1",
+				"select1 split(ano<=1970,",
+				"     ano>1970,",
+				"     disjoint: false) ~> ATE1970@(ATE1970, ACIMA1970)",
+				"ATE1970@ATE1970 sink(allowSchemaDrift: true,",
+				"     validateSchema: false,",
+				"     input(",
+				"          ID_CATEGORIA as integer,",
+				"          NOME_CATEGORIA as string",
+				"     ),",
+				"     format: 'parquet',",
+				"     partitionFileNames:['crmate1970.parquet'],",
+				"     umask: 0022,",
+				"     preCommands: [],",
+				"     postCommands: [],",
+				"     skipDuplicateMapInputs: true,",
+				"     skipDuplicateMapOutputs: true) ~> sink1",
+				"ATE1970@ACIMA1970 sink(allowSchemaDrift: true,",
+				"     validateSchema: false,",
+				"     input(",
+				"          {id;primeiro_nome;ultimo_nome;email;sexo;cidade;pais;codigo_pais;Time_zone;empresa;profissao;etnia;idioma;montadora;carro;ano;nascimento} as string",
+				"     ),",
+				"     partitionFileNames:['crmacima1970'],",
+				"     umask: 0022,",
+				"     preCommands: [],",
+				"     postCommands: [],",
+				"     skipDuplicateMapInputs: true,",
+				"     skipDuplicateMapOutputs: true) ~> sink2"
 			]
 		}
 	}
