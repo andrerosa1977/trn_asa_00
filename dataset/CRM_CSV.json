@@ -1,0 +1,93 @@
+{
+	"name": "CRM_CSV",
+	"properties": {
+		"linkedServiceName": {
+			"referenceName": "asa-trn-99-WorkspaceDefaultStorage",
+			"type": "LinkedServiceReference"
+		},
+		"annotations": [],
+		"type": "DelimitedText",
+		"typeProperties": {
+			"location": {
+				"type": "AzureBlobFSLocation",
+				"fileName": "CRM.csv",
+				"folderPath": "bronze/carros",
+				"fileSystem": "treinamento"
+			},
+			"columnDelimiter": ";",
+			"escapeChar": "\\",
+			"firstRowAsHeader": true,
+			"quoteChar": "\""
+		},
+		"schema": [
+			{
+				"name": "id",
+				"type": "String"
+			},
+			{
+				"name": "primeiro_nome",
+				"type": "String"
+			},
+			{
+				"name": "ultimo_nome",
+				"type": "String"
+			},
+			{
+				"name": "email",
+				"type": "String"
+			},
+			{
+				"name": "sexo",
+				"type": "String"
+			},
+			{
+				"name": "cidade",
+				"type": "String"
+			},
+			{
+				"name": "pais",
+				"type": "String"
+			},
+			{
+				"name": "codigo_pais",
+				"type": "String"
+			},
+			{
+				"name": "Time_zone",
+				"type": "String"
+			},
+			{
+				"name": "empresa",
+				"type": "String"
+			},
+			{
+				"name": "profissao",
+				"type": "String"
+			},
+			{
+				"name": "etnia",
+				"type": "String"
+			},
+			{
+				"name": "idioma",
+				"type": "String"
+			},
+			{
+				"name": "montadora",
+				"type": "String"
+			},
+			{
+				"name": "carro",
+				"type": "String"
+			},
+			{
+				"name": "ano",
+				"type": "String"
+			},
+			{
+				"name": "nascimento",
+				"type": "String"
+			}
+		]
+	}
+}
