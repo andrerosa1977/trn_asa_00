@@ -1,0 +1,17 @@
+{
+	"name": "16_external_table_carros",
+	"properties": {
+		"content": {
+			"query": "IF NOT EXISTS (SELECT * FROM sys.external_file_formats WHERE name = 'ParquetFormat') \n\tCREATE EXTERNAL FILE FORMAT [SynapseParquetFormat] \n\tWITH ( FORMAT_TYPE = PARQUET)\nGO\n\nIF NOT EXISTS (SELECT * FROM sys.external_data_sources WHERE name = 'treinamento_adlstrnsolar99_dfs_core_windows_net') \n\tCREATE EXTERNAL DATA SOURCE [treinamento_adlstrnsolar99_dfs_core_windows_net] \n\tWITH (\n\t\tLOCATION = 'abfss://treinamento@adlstrnsolar99.dfs.core.windows.net' \n\t)\nGO\n\nCREATE EXTERNAL TABLE silver.carros (\n\t[id] nvarchar(4000),\n\t[primeiro_nome] nvarchar(4000),\n\t[ultimo_nome] nvarchar(4000),\n\t[email] nvarchar(4000),\n\t[sexo] nvarchar(4000),\n\t[cidade] nvarchar(4000),\n\t[pais] nvarchar(4000),\n\t[codigo_pais] nvarchar(4000),\n\t[Time_zone] nvarchar(4000),\n\t[empresa] nvarchar(4000),\n\t[profissao] nvarchar(4000),\n\t[etnia] nvarchar(4000),\n\t[idioma] nvarchar(4000),\n\t[montadora] nvarchar(4000),\n\t[carro] nvarchar(4000),\n\t[nascimento] nvarchar(4000)\n\t)\n\tWITH (\n\tLOCATION = 'bronze/crm/output/**',\n\tDATA_SOURCE = [treinamento_adlstrnsolar99_dfs_core_windows_net],\n\tFILE_FORMAT = [SynapseParquetFormat]\n\t)\nGO\n\n\nSELECT TOP 100 * FROM silver.carros\nGO",
+			"metadata": {
+				"language": "sql"
+			},
+			"currentConnection": {
+				"databaseName": "lhdw",
+				"poolName": "Built-in"
+			},
+			"resultLimit": 5000
+		},
+		"type": "SqlQuery"
+	}
+}

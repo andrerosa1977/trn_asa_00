@@ -1,0 +1,227 @@
+{
+	"name": "DB Taxi Apache Spark",
+	"properties": {
+		"folder": {
+			"name": "Analise TAXI"
+		},
+		"nbformat": 4,
+		"nbformat_minor": 2,
+		"bigDataPool": {
+			"referenceName": "Cluster1",
+			"type": "BigDataPoolReference"
+		},
+		"sessionProperties": {
+			"driverMemory": "28g",
+			"driverCores": 4,
+			"executorMemory": "28g",
+			"executorCores": 4,
+			"numExecutors": 1,
+			"conf": {
+				"spark.dynamicAllocation.enabled": "true",
+				"spark.dynamicAllocation.minExecutors": "1",
+				"spark.dynamicAllocation.maxExecutors": "4",
+				"spark.autotune.trackingId": "53b5fa5c-b5d9-4674-8a06-fd6d6e776a9d"
+			}
+		},
+		"metadata": {
+			"saveOutput": true,
+			"enableDebugMode": false,
+			"kernelspec": {
+				"name": "synapse_pyspark",
+				"display_name": "Synapse PySpark"
+			},
+			"language_info": {
+				"name": "python"
+			},
+			"a365ComputeOptions": {
+				"id": "/subscriptions/fcdf740b-363d-4924-8de6-a7a7c85fa07f/resourceGroups/trn-synapse-solar-dev/providers/Microsoft.Synapse/workspaces/asa-trn-99/bigDataPools/Cluster1",
+				"name": "Cluster1",
+				"type": "Spark",
+				"endpoint": "https://asa-trn-99.dev.azuresynapse.net/livyApi/versions/2019-11-01-preview/sparkPools/Cluster1",
+				"auth": {
+					"type": "AAD",
+					"authResource": "https://dev.azuresynapse.net"
+				},
+				"sparkVersion": "3.2",
+				"nodeCount": 10,
+				"cores": 4,
+				"memory": 28,
+				"automaticScaleJobs": true
+			},
+			"sessionKeepAliveTimeout": 30
+		},
+		"cells": [
+			{
+				"cell_type": "markdown",
+				"metadata": {
+					"nteract": {
+						"transient": {
+							"deleting": false
+						}
+					}
+				},
+				"source": [
+					"## Criar um relatório do Power BI usando o Apache Spark e o Azure Synapse Analytics"
+				]
+			},
+			{
+				"cell_type": "markdown",
+				"metadata": {
+					"nteract": {
+						"transient": {
+							"deleting": false
+						}
+					}
+				},
+				"source": [
+					"#### Execute as linhas a seguir para criar um dataframe do Spark, colando o código em uma nova célula. Isso recupera os dados por meio da API do Conjunto de Dados em Aberto no Azure. A extração de todos esses dados gera cerca de 1,5 bilhão de linhas. O exemplo de código a seguir usa start_date e end_date para aplicar um filtro que retorna um único mês de dados."
+				]
+			},
+			{
+				"cell_type": "code",
+				"metadata": {
+					"jupyter": {
+						"source_hidden": false,
+						"outputs_hidden": false
+					},
+					"nteract": {
+						"transient": {
+							"deleting": false
+						}
+					},
+					"microsoft": {
+						"language": "python"
+					}
+				},
+				"source": [
+					"%%pyspark\r\n",
+					"from azureml.opendatasets import NycTlcYellow\r\n",
+					"from dateutil import parser\r\n",
+					"from datetime import datetime\r\n",
+					"\r\n",
+					"end_date = parser.parse('2018-06-06')\r\n",
+					"start_date = parser.parse('2018-05-01')\r\n",
+					"nyc_tlc = NycTlcYellow(start_date=start_date, end_date=end_date)\r\n",
+					"filtered_df = nyc_tlc.to_spark_dataframe()"
+				],
+				"execution_count": 1
+			},
+			{
+				"cell_type": "markdown",
+				"metadata": {
+					"nteract": {
+						"transient": {
+							"deleting": false
+						}
+					}
+				},
+				"source": [
+					"#### Usando o SQL do Apache Spark, criaremos um banco de dados chamado NycTlcTutorial. Usaremos esse banco de dados para armazenar os resultados do nosso processamento de dados."
+				]
+			},
+			{
+				"cell_type": "code",
+				"metadata": {
+					"jupyter": {
+						"source_hidden": false,
+						"outputs_hidden": false
+					},
+					"nteract": {
+						"transient": {
+							"deleting": false
+						}
+					},
+					"microsoft": {
+						"language": "python"
+					}
+				},
+				"source": [
+					"%%pyspark\r\n",
+					" spark.sql(\"CREATE DATABASE IF NOT EXISTS NycTlcTutorial\")"
+				],
+				"execution_count": 2
+			},
+			{
+				"cell_type": "markdown",
+				"metadata": {
+					"nteract": {
+						"transient": {
+							"deleting": false
+						}
+					}
+				},
+				"source": [
+					"#### Em seguida, usaremos as operações de dataframe do Spark para processar os dados. No seguinte código, executaremos as seguintes transformações:\r\n",
+					"#### \r\n",
+					"#### A remoção de colunas que não são necessárias.\r\n",
+					"#### A remoção de exceções/valores incorretos por meio da filtragem.\r\n",
+					"A criação de recursos, como tripTimeSecs e tipped, para análise adicional."
+				]
+			},
+			{
+				"cell_type": "code",
+				"metadata": {
+					"jupyter": {
+						"source_hidden": false,
+						"outputs_hidden": false
+					},
+					"nteract": {
+						"transient": {
+							"deleting": false
+						}
+					}
+				},
+				"source": [
+					"from pyspark.sql.functions import unix_timestamp, date_format, col, when\r\n",
+					"\r\n",
+					"taxi_df = filtered_df.select('totalAmount', 'fareAmount', 'tipAmount', 'paymentType', 'rateCodeId', 'passengerCount'\\\r\n",
+					"                                , 'tripDistance', 'tpepPickupDateTime', 'tpepDropoffDateTime'\\\r\n",
+					"                                , date_format('tpepPickupDateTime', 'hh').alias('pickupHour')\\\r\n",
+					"                                , date_format('tpepPickupDateTime', 'EEEE').alias('weekdayString')\\\r\n",
+					"                                , (unix_timestamp(col('tpepDropoffDateTime')) - unix_timestamp(col('tpepPickupDateTime'))).alias('tripTimeSecs')\\\r\n",
+					"                                , (when(col('tipAmount') > 0, 1).otherwise(0)).alias('tipped')\r\n",
+					"                                )\\\r\n",
+					"                        .filter((filtered_df.passengerCount > 0) & (filtered_df.passengerCount < 8)\\\r\n",
+					"                                & (filtered_df.tipAmount >= 0) & (filtered_df.tipAmount <= 25)\\\r\n",
+					"                                & (filtered_df.fareAmount >= 1) & (filtered_df.fareAmount <= 250)\\\r\n",
+					"                                & (filtered_df.tipAmount < filtered_df.fareAmount)\\\r\n",
+					"                                & (filtered_df.tripDistance > 0) & (filtered_df.tripDistance <= 100)\\\r\n",
+					"                                & (filtered_df.rateCodeId <= 5)\r\n",
+					"                                & (filtered_df.paymentType.isin({\"1\", \"2\"})))"
+				],
+				"execution_count": 3
+			},
+			{
+				"cell_type": "markdown",
+				"metadata": {
+					"nteract": {
+						"transient": {
+							"deleting": false
+						}
+					}
+				},
+				"source": [
+					"#### Por fim, salvaremos nosso dataframe usando o método saveAsTable do Apache Spark. Isso permitirá que você consulte a mesma tabela mais tarde e conecte-se a ela usando pools de SQL sem servidor."
+				]
+			},
+			{
+				"cell_type": "code",
+				"metadata": {
+					"jupyter": {
+						"source_hidden": false,
+						"outputs_hidden": false
+					},
+					"nteract": {
+						"transient": {
+							"deleting": false
+						}
+					}
+				},
+				"source": [
+					"taxi_df.write.mode(\"overwrite\").saveAsTable(\"NycTlcTutorial.nyctaxi\")"
+				],
+				"execution_count": 4
+			}
+		]
+	}
+}
