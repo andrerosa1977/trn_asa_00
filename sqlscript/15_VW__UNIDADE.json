@@ -1,6 +1,9 @@
 {
-	"name": "14_VW__UNIDADE",
+	"name": "15_VW__UNIDADE",
 	"properties": {
+		"folder": {
+			"name": "01_SERVERLESS"
+		},
 		"content": {
 			"query": "-- This is auto-generated code\nCREATE VIEW VW_UNIDADE\nAS\nSELECT\n    TOP 100 *\nFROM\n    OPENROWSET(\n        BULK 'https://adlstrnsolar99.dfs.core.windows.net/treinamento/bronze/unidade/dbo.UNIDADE.parquet',\n        FORMAT = 'PARQUET'\n    ) AS [result]\n",
 			"metadata": {

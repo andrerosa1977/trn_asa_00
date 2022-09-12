@@ -1,0 +1,20 @@
+{
+	"name": "03_CRIAR_CREDENCIAL",
+	"properties": {
+		"folder": {
+			"name": "01_SERVERLESS"
+		},
+		"content": {
+			"query": "-- Create master key in databases with some password (one-off per database)\nUSE LHDW;\nCREATE MASTER KEY ENCRYPTION BY PASSWORD = 'TREINAMENTOSOLAR2022@!'\nGO\n\n--CRIAÇÃO DE CREDENTIAL\nUSE LHDW;\nCREATE DATABASE SCOPED CREDENTIAL SASADLSTRNSOLAR\n\n WITH IDENTITY = 'SHARED ACCESS SIGNATURE',\n--GERADO SECRET VIA SAS\n SECRET = '?sv=2021-06-08&ss=bf&srt=sc&sp=rwdlacyx&se=2022-11-02T01:12:12Z&st=2022-09-12T17:12:12Z&spr=https&sig=2hgFfD4fo8kcmkztQ6l7t413%2BHZkR%2BTJLm68wuJH4C4%3D'\n GO\n",
+			"metadata": {
+				"language": "sql"
+			},
+			"currentConnection": {
+				"databaseName": "lhdw",
+				"poolName": "Built-in"
+			},
+			"resultLimit": 5000
+		},
+		"type": "SqlQuery"
+	}
+}

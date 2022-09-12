@@ -1,6 +1,9 @@
 {
 	"name": "02_LOAD_CRM",
 	"properties": {
+		"folder": {
+			"name": "01_POOL_SPARK"
+		},
 		"nbformat": 4,
 		"nbformat_minor": 2,
 		"bigDataPool": {
@@ -17,7 +20,7 @@
 				"spark.dynamicAllocation.enabled": "true",
 				"spark.dynamicAllocation.minExecutors": "1",
 				"spark.dynamicAllocation.maxExecutors": "4",
-				"spark.autotune.trackingId": "2f8cc671-72c5-4533-aa6f-dedb7434081b"
+				"spark.autotune.trackingId": "77e736c7-9a8b-46c7-9070-ce7fe81d0583"
 			}
 		},
 		"metadata": {

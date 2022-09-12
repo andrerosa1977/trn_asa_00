@@ -1,6 +1,9 @@
 {
 	"name": "01_DF_Categoria",
 	"properties": {
+		"folder": {
+			"name": "01_POOL_SPARK"
+		},
 		"nbformat": 4,
 		"nbformat_minor": 2,
 		"bigDataPool": {
@@ -18,7 +21,7 @@
 				"spark.dynamicAllocation.enabled": "true",
 				"spark.dynamicAllocation.minExecutors": "1",
 				"spark.dynamicAllocation.maxExecutors": "5",
-				"spark.autotune.trackingId": "a9d8e342-4470-488f-9823-e85935295c2b"
+				"spark.autotune.trackingId": "84f827ca-7ac1-4c30-9c70-967499ca79d7"
 			}
 		},
 		"metadata": {

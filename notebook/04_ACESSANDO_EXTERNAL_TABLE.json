@@ -1,6 +1,9 @@
 {
-	"name": "Notebook 1",
+	"name": "04_ACESSANDO_EXTERNAL_TABLE",
 	"properties": {
+		"folder": {
+			"name": "01_POOL_SPARK"
+		},
 		"nbformat": 4,
 		"nbformat_minor": 2,
 		"bigDataPool": {
@@ -18,7 +21,7 @@
 				"spark.dynamicAllocation.enabled": "true",
 				"spark.dynamicAllocation.minExecutors": "1",
 				"spark.dynamicAllocation.maxExecutors": "4",
-				"spark.autotune.trackingId": "9db2d607-14ae-40b9-9676-da58199d162c"
+				"spark.autotune.trackingId": "368dfde5-6745-44b5-8372-9801221cefb2"
 			}
 		},
 		"metadata": {
@@ -50,6 +53,19 @@
 		},
 		"cells": [
 			{
+				"cell_type": "markdown",
+				"metadata": {
+					"nteract": {
+						"transient": {
+							"deleting": false
+						}
+					}
+				},
+				"source": [
+					"#### Acessando external TABLES"
+				]
+			},
+			{
 				"cell_type": "code",
 				"metadata": {
 					"microsoft": {
@@ -59,9 +75,9 @@
 				"source": [
 					"%%pyspark\n",
 					"df = spark.sql(\"SELECT * FROM lhdw.SILVER.D_CATEGORIA\")\n",
-					"# df.show(10)"
+					"df.show(10)"
 				],
-				"execution_count": 6
+				"execution_count": 1
 			}
 		]
 	}
