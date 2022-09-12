@@ -98,53 +98,28 @@
 							"outputs": [
 								{
 									"referenceName": "vendas_cdc",
-									"type": "DatasetReference"
+									"type": "DatasetReference",
+									"parameters": {
+										"triggerStart": {
+											"value": "@pipeline().parameters.triggerStartTime",
+											"type": "Expression"
+										}
+									}
 								}
 							]
 						}
 					]
-				}
-			},
-			{
-				"name": "Notebook1",
-				"type": "SynapseNotebook",
-				"dependsOn": [
-					{
-						"activity": "HasChangedRows",
-						"dependencyConditions": [
-							"Succeeded"
-						]
-					}
-				],
-				"policy": {
-					"timeout": "0.12:00:00",
-					"retry": 0,
-					"retryIntervalInSeconds": 30,
-					"secureOutput": false,
-					"secureInput": false
-				},
-				"userProperties": [],
-				"typeProperties": {
-					"snapshot": true,
-					"executorSize": null,
-					"conf": {
-						"spark.dynamicAllocation.enabled": null,
-						"spark.dynamicAllocation.minExecutors": null,
-						"spark.dynamicAllocation.maxExecutors": null
-					},
-					"driverSize": null,
-					"numExecutors": null
 				}
 			}
 		],
 		"parameters": {
 			"triggerStartTime": {
 				"type": "string",
-				"defaultValue": "2022-09-09 01:25:09.230"
+				"defaultValue": "2022-09-12 01:25:09.230"
 			},
 			"triggerEndTime": {
 				"type": "string",
-				"defaultValue": "2022-09-09 18:00:00.000"
+				"defaultValue": "2022-09-12 18:00:00.000"
 			}
 		},
 		"folder": {
