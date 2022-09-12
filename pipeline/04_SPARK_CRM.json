@@ -1,5 +1,5 @@
 {
-	"name": "02_SPARK_CRM",
+	"name": "04_SPARK_CRM",
 	"properties": {
 		"activities": [
 			{
@@ -19,7 +19,13 @@
 						"referenceName": "03_CRIA_TABELA_SPARK_PARTITION",
 						"type": "NotebookReference"
 					},
-					"snapshot": true
+					"snapshot": true,
+					"conf": {
+						"spark.dynamicAllocation.enabled": null,
+						"spark.dynamicAllocation.minExecutors": null,
+						"spark.dynamicAllocation.maxExecutors": null
+					},
+					"numExecutors": null
 				}
 			}
 		],

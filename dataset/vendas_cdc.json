@@ -1,0 +1,27 @@
+{
+	"name": "vendas_cdc",
+	"properties": {
+		"linkedServiceName": {
+			"referenceName": "asa-trn-99-WorkspaceDefaultStorage",
+			"type": "LinkedServiceReference"
+		},
+		"annotations": [],
+		"type": "Parquet",
+		"typeProperties": {
+			"location": {
+				"type": "AzureBlobFSLocation",
+				"fileName": {
+					"value": "@concat(formatDateTime(dataset().triggerStart,'yyyyMMddHHmmssfff'),'.parquet')",
+					"type": "Expression"
+				},
+				"folderPath": {
+					"value": "@concat('minierp/vendas/incremental/parquet/',formatDateTime(dataset().triggerStart,'yyyy/MM/dd'))",
+					"type": "Expression"
+				},
+				"fileSystem": "bronze"
+			},
+			"compressionCodec": "snappy"
+		},
+		"schema": []
+	}
+}

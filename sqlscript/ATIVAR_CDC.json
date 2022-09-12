@@ -1,8 +1,8 @@
 {
-	"name": "SQL script 1",
+	"name": "ATIVAR_CDC",
 	"properties": {
 		"content": {
-			"query": "SELECT TOP (10) [totalAmount]\n,[fareAmount]\n,[tipAmount]\n,[paymentType]\n,[rateCodeId]\n,[passengerCount]\n,[tripDistance]\n,[tpepPickupDateTime]\n,[tpepDropoffDateTime]\n,[pickupHour]\n,[weekdayString]\n,[tripTimeSecs]\n,[tipped]\n FROM [nyctlctutorial].[dbo].[nyctaxi]",
+			"query": "--ATIVAR CDC\n\nUSE minierp    \nGO   EXEC sys.sp_cdc_enable_db   GO  ",
 			"metadata": {
 				"language": "sql"
 			},
