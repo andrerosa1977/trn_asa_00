@@ -1,11 +1,11 @@
 {
-	"name": "03_CRIA_FONTE_EXTERNA",
+	"name": "05_CRIA_FONTE_EXTERNA",
 	"properties": {
 		"folder": {
 			"name": "01_SERVERLESS"
 		},
 		"content": {
-			"query": "\n\n-- PARA USERS INTERNOS\nIF NOT EXISTS (SELECT * FROM sys.external_data_sources \nWHERE name = 'treinamento_adlstrnsolar99_dfs_core_windows_net') \n\tCREATE EXTERNAL DATA SOURCE [treinamento_adlstrnsolar99_dfs_core_windows_net] \n\tWITH (\n\t\tLOCATION = 'abfss://treinamento@adlstrnsolar99.dfs.core.windows.net' \n\t)\nGO\n\n\n--PARA USER EXTERNOS\nIF NOT EXISTS (SELECT * FROM sys.external_data_sources \nWHERE name = 'treinamento_adlstrnsolar99_dfs_core_windows_net_ext') \n\tCREATE EXTERNAL DATA SOURCE [treinamento_adlstrnsolar99_dfs_core_windows_net_ext] \n\tWITH (\n\t\tLOCATION = 'abfss://treinamento@adlstrnsolar99.dfs.core.windows.net',\n\t\tCREDENTIAL=[SASADLSTRNSOLAR]\n\t)\nGO\n\n\n",
+			"query": "\n\n-- PARA USERS INTERNOS -<\nIF NOT EXISTS (SELECT * FROM sys.external_data_sources \nWHERE name = 'treinamento_adlstrnsolar99_dfs_core_windows_net') \n\tCREATE EXTERNAL DATA SOURCE [treinamento_adlstrnsolar99_dfs_core_windows_net] \n\tWITH (\n\t\tLOCATION = 'abfss://treinamento@adlstrnsolar99.dfs.core.windows.net' \n\t)\nGO\n\n\n--PARA USER EXTERNOS ->\n--Entrar no datalake e gerar chave SAS\nIF NOT EXISTS (SELECT * FROM sys.external_data_sources \nWHERE name = 'treinamento_adlstrnsolar99_dfs_core_windows_net_ext') \n\tCREATE EXTERNAL DATA SOURCE [treinamento_adlstrnsolar99_dfs_core_windows_net_ext] \n\tWITH (\n\t\tLOCATION = 'abfss://treinamento@adlstrnsolar99.dfs.core.windows.net',\n\t\tCREDENTIAL=[SASADLSTRNSOLAR]\n\t)\nGO\n\n\n",
 			"metadata": {
 				"language": "sql"
 			},

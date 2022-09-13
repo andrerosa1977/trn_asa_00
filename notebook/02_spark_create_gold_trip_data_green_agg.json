@@ -1,8 +1,8 @@
 {
-	"name": "06_spark_create_gold_trip_data_green_agg",
+	"name": "02_spark_create_gold_trip_data_green_agg",
 	"properties": {
 		"folder": {
-			"name": "01_POOL_SPARK"
+			"name": "02_TAXI_ANALISE"
 		},
 		"nbformat": 4,
 		"nbformat_minor": 2,
@@ -20,7 +20,7 @@
 				"spark.dynamicAllocation.enabled": "true",
 				"spark.dynamicAllocation.minExecutors": "1",
 				"spark.dynamicAllocation.maxExecutors": "4",
-				"spark.autotune.trackingId": "63f65804-ebf0-41e3-8237-090ff43a7b1c"
+				"spark.autotune.trackingId": "a841ece9-7c7e-4374-a965-f073a38e1bb5"
 			}
 		},
 		"metadata": {

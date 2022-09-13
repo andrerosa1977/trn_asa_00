@@ -2,7 +2,7 @@
 	"name": "03_CRIA_TABELA_SPARK_PARTITION",
 	"properties": {
 		"folder": {
-			"name": "01_POOL_SPARK"
+			"name": "01_POOL_SPARK/CASE 2 CRM"
 		},
 		"nbformat": 4,
 		"nbformat_minor": 2,
@@ -20,7 +20,7 @@
 				"spark.dynamicAllocation.enabled": "false",
 				"spark.dynamicAllocation.minExecutors": "2",
 				"spark.dynamicAllocation.maxExecutors": "2",
-				"spark.autotune.trackingId": "d2b15dd2-bd14-4323-aefb-499921cebd3c"
+				"spark.autotune.trackingId": "a6ce33c9-a213-4938-889a-0d085853eb7d"
 			}
 		},
 		"metadata": {

@@ -1,8 +1,8 @@
 {
-	"name": "01_DF_Categoria",
+	"name": "01_CARGA_SILVER",
 	"properties": {
 		"folder": {
-			"name": "01_POOL_SPARK"
+			"name": "01_POOL_SPARK/CASE 1 VENDAS"
 		},
 		"nbformat": 4,
 		"nbformat_minor": 2,
@@ -21,7 +21,7 @@
 				"spark.dynamicAllocation.enabled": "true",
 				"spark.dynamicAllocation.minExecutors": "1",
 				"spark.dynamicAllocation.maxExecutors": "5",
-				"spark.autotune.trackingId": "84f827ca-7ac1-4c30-9c70-967499ca79d7"
+				"spark.autotune.trackingId": "a4ad6fe3-a7aa-447b-a9b3-000ec8a68cc8"
 			}
 		},
 		"metadata": {
@@ -53,6 +53,19 @@
 		},
 		"cells": [
 			{
+				"cell_type": "markdown",
+				"metadata": {
+					"nteract": {
+						"transient": {
+							"deleting": false
+						}
+					}
+				},
+				"source": [
+					"### CRIA DATAFRAMES PARA CARGA CAMADA SILVER"
+				]
+			},
+			{
 				"cell_type": "code",
 				"metadata": {
 					"microsoft": {
@@ -62,10 +75,17 @@
 				},
 				"source": [
 					"%%pyspark\r\n",
-					"df = spark.read.load('abfss://treinamento@adlstrnsolar99.dfs.core.windows.net/bronze/categoria/dbo.CATEGORIA.parquet', format='parquet')\r\n",
-					"display(df.limit(10))"
+					"dfcategoria = spark.read.load('abfss://treinamento@adlstrnsolar99.dfs.core.windows.net/bronze/categoria/dbo.CATEGORIA.parquet', format='parquet')\r\n",
+					"dfcidade = spark.read.load('abfss://treinamento@adlstrnsolar99.dfs.core.windows.net/bronze/cidade/dbo.CIDADE.parquet', format='parquet')\r\n",
+					"dfcliente = spark.read.load('abfss://treinamento@adlstrnsolar99.dfs.core.windows.net/bronze/cliente/dbo.CLIENTE.parquet', format='parquet')\r\n",
+					"dfprodutos = spark.read.load('abfss://treinamento@adlstrnsolar99.dfs.core.windows.net/bronze/produtos/dbo.PRODUTOS.parquet', format='parquet')\r\n",
+					"dfunidade = spark.read.load('abfss://treinamento@adlstrnsolar99.dfs.core.windows.net/bronze/unidade/dbo.UNIDADE.parquet', format='parquet')\r\n",
+					"dfvendedores = spark.read.load('abfss://treinamento@adlstrnsolar99.dfs.core.windows.net/bronze/vendedores/dbo.VENDEDORES.parquet', format='parquet')\r\n",
+					"dfvendas = spark.read.load('abfss://treinamento@adlstrnsolar99.dfs.core.windows.net/bronze/vendas/dbo.VENDAS.parquet', format='parquet')\r\n",
+					"dfvenda_itens = spark.read.load('abfss://treinamento@adlstrnsolar99.dfs.core.windows.net/bronze/vendas_itens/dbo.VENDAS_ITENS.parquet', format='parquet')\r\n",
+					""
 				],
-				"execution_count": 2
+				"execution_count": 1
 			}
 		]
 	}

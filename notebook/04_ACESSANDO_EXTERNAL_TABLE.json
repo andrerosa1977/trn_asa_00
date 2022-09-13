@@ -2,7 +2,7 @@
 	"name": "04_ACESSANDO_EXTERNAL_TABLE",
 	"properties": {
 		"folder": {
-			"name": "01_POOL_SPARK"
+			"name": "01_POOL_SPARK/CASE 2 CRM"
 		},
 		"nbformat": 4,
 		"nbformat_minor": 2,
@@ -21,15 +21,15 @@
 				"spark.dynamicAllocation.enabled": "true",
 				"spark.dynamicAllocation.minExecutors": "1",
 				"spark.dynamicAllocation.maxExecutors": "4",
-				"spark.autotune.trackingId": "368dfde5-6745-44b5-8372-9801221cefb2"
+				"spark.autotune.trackingId": "d3d7cb9b-b040-4503-8423-69d3f797b6cd"
 			}
 		},
 		"metadata": {
 			"saveOutput": true,
 			"enableDebugMode": false,
 			"kernelspec": {
-				"name": "synapse_pyspark",
-				"display_name": "Synapse PySpark"
+				"name": "synapse_sparksql",
+				"display_name": "sql"
 			},
 			"language_info": {
 				"name": "sql"

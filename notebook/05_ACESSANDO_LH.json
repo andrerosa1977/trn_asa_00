@@ -2,7 +2,7 @@
 	"name": "05_ACESSANDO_LH",
 	"properties": {
 		"folder": {
-			"name": "01_POOL_SPARK"
+			"name": "01_POOL_SPARK/CASE 2 CRM"
 		},
 		"nbformat": 4,
 		"nbformat_minor": 2,
@@ -20,7 +20,7 @@
 				"spark.dynamicAllocation.enabled": "false",
 				"spark.dynamicAllocation.minExecutors": "2",
 				"spark.dynamicAllocation.maxExecutors": "2",
-				"spark.autotune.trackingId": "71cd8a4e-adbb-488e-9ec8-ba85c9e78241"
+				"spark.autotune.trackingId": "ea3ddc34-6f9c-4f9e-905c-e64e1c311335"
 			}
 		},
 		"metadata": {

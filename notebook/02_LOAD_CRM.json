@@ -2,7 +2,7 @@
 	"name": "02_LOAD_CRM",
 	"properties": {
 		"folder": {
-			"name": "01_POOL_SPARK"
+			"name": "01_POOL_SPARK/CASE 2 CRM"
 		},
 		"nbformat": 4,
 		"nbformat_minor": 2,
@@ -20,7 +20,7 @@
 				"spark.dynamicAllocation.enabled": "true",
 				"spark.dynamicAllocation.minExecutors": "1",
 				"spark.dynamicAllocation.maxExecutors": "4",
-				"spark.autotune.trackingId": "77e736c7-9a8b-46c7-9070-ce7fe81d0583"
+				"spark.autotune.trackingId": "ab3ac17c-95d2-4856-86d2-48a500ca19ae"
 			}
 		},
 		"metadata": {

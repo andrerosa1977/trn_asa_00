@@ -1,5 +1,5 @@
 {
-	"name": "DB Taxi Apache Spark",
+	"name": "01 DB Taxi Apache Spark",
 	"properties": {
 		"folder": {
 			"name": "02_TAXI_ANALISE"
@@ -20,7 +20,7 @@
 				"spark.dynamicAllocation.enabled": "true",
 				"spark.dynamicAllocation.minExecutors": "1",
 				"spark.dynamicAllocation.maxExecutors": "4",
-				"spark.autotune.trackingId": "53b5fa5c-b5d9-4674-8a06-fd6d6e776a9d"
+				"spark.autotune.trackingId": "a42f4abc-be60-424b-bde0-4538a8782830"
 			}
 		},
 		"metadata": {
@@ -45,7 +45,8 @@
 				"sparkVersion": "3.2",
 				"nodeCount": 10,
 				"cores": 4,
-				"memory": 28
+				"memory": 28,
+				"automaticScaleJobs": true
 			},
 			"sessionKeepAliveTimeout": 30
 		},

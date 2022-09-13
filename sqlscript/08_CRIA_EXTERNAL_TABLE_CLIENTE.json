@@ -1,5 +1,5 @@
 {
-	"name": "07_CRIA_EXTERNAL_TABLE_CLIENTE",
+	"name": "08_CRIA_EXTERNAL_TABLE_CLIENTE",
 	"properties": {
 		"folder": {
 			"name": "01_SERVERLESS"
