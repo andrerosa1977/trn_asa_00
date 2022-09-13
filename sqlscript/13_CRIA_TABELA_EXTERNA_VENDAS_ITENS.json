@@ -5,7 +5,7 @@
 			"name": "01_SERVERLESS"
 		},
 		"content": {
-			"query": "-- drop EXTERNAL TABLE SILVER.VENDAS_ITENS \nCREATE EXTERNAL TABLE SILVER.VENDAS_ITENS (\n\t[NUM_VENDA] int,\n\t[NUM_SEQ] int,\n\t[ID_PROD] int,\n\t[QTDE] numeric(10,2),\n\t[VAL_UNIT] numeric(10,2),\n\t[VAL_TOTAL] numeric(10,2)\n\t)\n\tWITH (\n\tLOCATION = 'silver/vendas_itens/**',\n\tDATA_SOURCE = [treinamento_adlstrnsolar99_dfs_core_windows_net],\n\tFILE_FORMAT = [ParquetFormat]\n\t)\nGO\n\n--select * from SILVER.VENDAS_ITENS \n",
+			"query": "-- drop EXTERNAL TABLE SILVER.VENDAS_ITENS \nCREATE EXTERNAL TABLE SILVER.VENDAS_ITENS (\n\t[NUM_VENDA] int,\n\t[NUM_SEQ] int,\n\t[ID_PROD] int,\n\t[QTDE] numeric(10,2),\n\t[VAL_UNIT] numeric(10,2),\n\t[VAL_TOTAL] numeric(10,2)\n\t)\n\tWITH (\n\tLOCATION = 'silver/venda_itens/**',\n\tDATA_SOURCE = [treinamento_adlstrnsolar99_dfs_core_windows_net],\n\tFILE_FORMAT = [ParquetFormat]\n\t)\nGO\n\n--select * from SILVER.VENDAS_ITENS \n",
 			"metadata": {
 				"language": "sql"
 			},
