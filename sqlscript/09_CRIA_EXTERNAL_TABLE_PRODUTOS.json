@@ -5,7 +5,7 @@
 			"name": "01_SERVERLESS"
 		},
 		"content": {
-			"query": "\nCREATE EXTERNAL TABLE SILVER.D_PRODUTOS (\n\t[ID_PROD] int,\n\t[NOME_PRODUTO] nvarchar(4000),\n\t[ID_CATEGORIA] int,\n\t[ID_UNIDADE] nvarchar(4000),\n\t[PRECO] numeric(10,2)\n\t)\n\tWITH (\n\tLOCATION = 'bronze/produtos/**',\n\tDATA_SOURCE = [treinamento_adlstrnsolar99_dfs_core_windows_net],\n\tFILE_FORMAT = [ParquetFormat]\n\t)\nGO\n",
+			"query": "--drop EXTERNAL TABLE SILVER.D_PRODUTOS\nCREATE EXTERNAL TABLE SILVER.D_PRODUTOS (\n\t[ID_PROD] int,\n\t[NOME_PRODUTO] nvarchar(4000),\n\t[ID_CATEGORIA] int,\n\t[ID_UNIDADE] nvarchar(4000),\n\t[PRECO] numeric(10,2)\n\t)\n\tWITH (\n\tLOCATION = 'silver/produtos/**',\n\tDATA_SOURCE = [treinamento_adlstrnsolar99_dfs_core_windows_net],\n\tFILE_FORMAT = [ParquetFormat]\n\t)\nGO\n\n--select * from SILVER.D_PRODUTOS",
 			"metadata": {
 				"language": "sql"
 			},

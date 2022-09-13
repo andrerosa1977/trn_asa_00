@@ -5,7 +5,7 @@
 			"name": "01_SERVERLESS"
 		},
 		"content": {
-			"query": "\nCREATE EXTERNAL TABLE SILVER.D_UNIDADE (\n\t[ID_UNIDADE] nvarchar(4000),\n\t[DESC_UNIDADE] nvarchar(4000)\n\t)\n\tWITH (\n\tLOCATION = 'bronze/unidade/**',\n\tDATA_SOURCE = [treinamento_adlstrnsolar99_dfs_core_windows_net],\n\tFILE_FORMAT = [ParquetFormat]\n\t)\nGO\n",
+			"query": "--DROP EXTERNAL TABLE SILVER.D_UNIDADE\nCREATE EXTERNAL TABLE SILVER.D_UNIDADE (\n\t[ID_UNIDADE] nvarchar(4000),\n\t[DESC_UNIDADE] nvarchar(4000)\n\t)\n\tWITH (\n\tLOCATION = 'silver/unidade/**',\n\tDATA_SOURCE = [treinamento_adlstrnsolar99_dfs_core_windows_net],\n\tFILE_FORMAT = [ParquetFormat]\n\t)\nGO\n\n--SELECT * FROM SILVER.D_UNIDADE ",
 			"metadata": {
 				"language": "sql"
 			},
