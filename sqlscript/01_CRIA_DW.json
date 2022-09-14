@@ -1,16 +1,16 @@
 {
-	"name": "ATIVAR_CDC",
+	"name": "01_CRIA_DW",
 	"properties": {
 		"folder": {
-			"name": "99_Outros"
+			"name": "02_SQL_DEDICADO"
 		},
 		"content": {
-			"query": "--ATIVAR CDC\n\nUSE minierp    \nGO   EXEC sys.sp_cdc_enable_db   GO  ",
+			"query": "--CRIADO PELO MANAGE SQL POOLS",
 			"metadata": {
 				"language": "sql"
 			},
 			"currentConnection": {
-				"databaseName": "nyctlctutorial",
+				"databaseName": "master",
 				"poolName": "Built-in"
 			},
 			"resultLimit": 5000

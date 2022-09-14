@@ -1,0 +1,20 @@
+{
+	"name": "02_CRIA_USER",
+	"properties": {
+		"folder": {
+			"name": "02_SQL_DEDICADO"
+		},
+		"content": {
+			"query": "-- cria login\ncreate login [bruno.galvincio@dataex.com.br] from external provider\nGO\n\n-- cria usuario\nuse lhdw\n\nCREATE user [bruno.galvincio@dataex.com.br] from login [bruno.galvincio@dataex.com.br]\nGO\n-- add role\nalter ROLE db_owner ADD MEMBER [bruno.galvincio@dataex.com.br]\n\n--adicionar contributor datalake",
+			"metadata": {
+				"language": "sql"
+			},
+			"currentConnection": {
+				"databaseName": "master",
+				"poolName": "Built-in"
+			},
+			"resultLimit": 5000
+		},
+		"type": "SqlQuery"
+	}
+}

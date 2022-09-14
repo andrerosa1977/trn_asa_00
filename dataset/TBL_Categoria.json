@@ -1,0 +1,26 @@
+{
+	"name": "TBL_Categoria",
+	"properties": {
+		"annotations": [],
+		"type": "SqlPoolTable",
+		"schema": [
+			{
+				"name": "ID_CATEGORIA",
+				"type": "int",
+				"precision": 10
+			},
+			{
+				"name": "NOME_CATEGORIA",
+				"type": "nvarchar"
+			}
+		],
+		"typeProperties": {
+			"schema": "SILVER",
+			"table": "D_BULK_CATEGORIA"
+		},
+		"sqlPool": {
+			"referenceName": "dw01",
+			"type": "SqlPoolReference"
+		}
+	}
+}

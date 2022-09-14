@@ -1,6 +1,9 @@
 {
-	"name": "SQL script 1",
+	"name": "Ler_parquet",
 	"properties": {
+		"folder": {
+			"name": "99_Outros"
+		},
 		"content": {
 			"query": "-- This is auto-generated code\nSELECT\n    TOP 100 *\nFROM\n    OPENROWSET(\n        BULK 'https://adlstrnsolar99.dfs.core.windows.net/treinamento/silver/categoria/**',\n        FORMAT = 'PARQUET'\n    ) AS [result]\n",
 			"metadata": {

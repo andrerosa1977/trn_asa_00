@@ -5,7 +5,7 @@
 			"name": "01_SERVERLESS"
 		},
 		"content": {
-			"query": "-- This is auto-generated code\nCREATE OR ALTER VIEW VW_UNIDADE\nAS\nSELECT\n    *\nFROM\n    OPENROWSET(\n        BULK 'https://adlstrnsolar99.dfs.core.windows.net/treinamento/bronze/unidade/dbo.UNIDADE.parquet',\n        FORMAT = 'PARQUET'\n    ) AS [result]\n",
+			"query": "-- This is auto-generated code\nCREATE OR ALTER VIEW VW_UNIDADE\nAS\nSELECT\n    *\nFROM\n    OPENROWSET(\n        BULK 'https://adlstrnsolar99.dfs.core.windows.net/treinamento/silver/unidade/*.parquet',\n        FORMAT = 'PARQUET'\n    ) AS [result]\n",
 			"metadata": {
 				"language": "sql"
 			},
