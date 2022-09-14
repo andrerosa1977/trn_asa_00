@@ -1,0 +1,20 @@
+{
+	"name": "14_VERIFICAR_TABELA_DEFRAG",
+	"properties": {
+		"folder": {
+			"name": "02_SQL_DEDICADO"
+		},
+		"content": {
+			"query": "DBCC PDW_SHOWSPACEUSED('GOLD.FATO_VENDAS');",
+			"metadata": {
+				"language": "sql"
+			},
+			"currentConnection": {
+				"databaseName": "dw01",
+				"poolName": "dw01"
+			},
+			"resultLimit": 5000
+		},
+		"type": "SqlQuery"
+	}
+}

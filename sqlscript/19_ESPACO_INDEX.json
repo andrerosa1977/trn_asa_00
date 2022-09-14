@@ -1,0 +1,20 @@
+{
+	"name": "19_ESPACO_INDEX",
+	"properties": {
+		"folder": {
+			"name": "02_SQL_DEDICADO"
+		},
+		"content": {
+			"query": "--Espaço da tabela pelo tipo de índice\n\nSELECT\n     index_type_desc\n,    SUM(row_count)                as table_type_row_count\n,    SUM(reserved_space_GB)        as table_type_reserved_space_GB\n,    SUM(data_space_GB)            as table_type_data_space_GB\n,    SUM(index_space_GB)           as table_type_index_space_GB\n,    SUM(unused_space_GB)          as table_type_unused_space_GB\nFROM dbo.vTableSizes\nGROUP BY index_type_desc\n;",
+			"metadata": {
+				"language": "sql"
+			},
+			"currentConnection": {
+				"databaseName": "dw01",
+				"poolName": "dw01"
+			},
+			"resultLimit": 5000
+		},
+		"type": "SqlQuery"
+	}
+}

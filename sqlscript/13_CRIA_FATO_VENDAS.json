@@ -1,0 +1,20 @@
+{
+	"name": "13_CRIA_FATO_VENDAS",
+	"properties": {
+		"folder": {
+			"name": "02_SQL_DEDICADO"
+		},
+		"content": {
+			"query": "IF NOT EXISTS (SELECT * FROM sys.objects O JOIN sys.schemas S ON O.schema_id = S.schema_id WHERE O.NAME = 'FATO_VENDAS' AND O.TYPE = 'U' AND S.NAME = 'GOLD')\nCREATE TABLE GOLD.FATO_VENDAS\n\t(\n\t [NUM_VENDA] int,\n\t [DATA_VENDA] datetime2(7),\n\t [ID_CLIENTE] int,\n\t [STATUS] nvarchar(4000),\n\t [ID_VENDEDOR] int,\n\t [NUM_SEQ] int,\n\t [ID_PROD] int,\n\t [QTDE] numeric(10,2),\n\t [VAL_UNIT] numeric(10,2),\n\t [VAL_TOTAL] numeric(10,2)\n\t)\nWITH\n\t(\n\tDISTRIBUTION = HASH([NUM_VENDA]),\n\t CLUSTERED COLUMNSTORE INDEX\n\t -- HEAP\n\t)\nGO\n\n--Uncomment the 4 lines below to create a stored procedure for data pipeline orchestration​\n--CREATE PROC bulk_load_FATO_VENDAS\n--AS\n--BEGIN\nCOPY INTO GOLD.FATO_VENDAS\n(NUM_VENDA 1, DATA_VENDA 2, ID_CLIENTE 3, STATUS 4, ID_VENDEDOR 5, NUM_SEQ 6, ID_PROD 7, QTDE 8, VAL_UNIT 9, VAL_TOTAL 10)\nFROM 'https://adlstrnsolar99.dfs.core.windows.net/treinamento/gold/fato_vendas'\nWITH\n(\n\tFILE_TYPE = 'PARQUET'\n\t,MAXERRORS = 0\n)\n--END\nGO\n\nSELECT TOP 100 * FROM GOLD.FATO_VENDAS\nGO",
+			"metadata": {
+				"language": "sql"
+			},
+			"currentConnection": {
+				"databaseName": "dw01",
+				"poolName": "dw01"
+			},
+			"resultLimit": 5000
+		},
+		"type": "SqlQuery"
+	}
+}
