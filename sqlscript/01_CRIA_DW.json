@@ -10,8 +10,8 @@
 				"language": "sql"
 			},
 			"currentConnection": {
-				"databaseName": "master",
-				"poolName": "Built-in"
+				"databaseName": "dw01",
+				"poolName": "dw01"
 			},
 			"resultLimit": 5000
 		},
