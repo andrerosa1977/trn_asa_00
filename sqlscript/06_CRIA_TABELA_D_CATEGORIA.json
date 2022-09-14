@@ -1,0 +1,17 @@
+{
+	"name": "06_CRIA_TABELA_D_CATEGORIA",
+	"properties": {
+		"content": {
+			"query": "IF NOT EXISTS (SELECT * FROM sys.objects O JOIN sys.schemas S ON O.schema_id = S.schema_id WHERE O.NAME = 'D_BULK_CATEGORIA' AND O.TYPE = 'U' AND S.NAME = 'SILVER')\nCREATE TABLE SILVER.D_BULK_CATEGORIA\n\t(\n\t [ID_CATEGORIA] int,\n\t [NOME_CATEGORIA] nvarchar(4000)\n\t)\nWITH\n\t(\n\tDISTRIBUTION = ROUND_ROBIN,\n\t CLUSTERED COLUMNSTORE INDEX\n\t -- HEAP\n\t)\nGO\n\n--Uncomment the 4 lines below to create a stored procedure for data pipeline orchestration​\n--CREATE PROC bulk_load_D_BULK_CATEGORIA\n--AS\n--BEGIN\n\n--COPY INTO SILVER.D_BULK_CATEGORIA\n--(ID_CATEGORIA 1, NOME_CATEGORIA 2)\n--FROM 'https://adlstrnsolar99.dfs.core.windows.net/treinamento/silver/categoria'\n--WITH\n--(\n--\tFILE_TYPE = 'PARQUET'\n--\t,MAXERRORS = 0\n--)\n--END\n--GO\n\nSELECT TOP 100 * FROM SILVER.D_BULK_CATEGORIA\nGO\n",
+			"metadata": {
+				"language": "sql"
+			},
+			"currentConnection": {
+				"databaseName": "dw01",
+				"poolName": "dw01"
+			},
+			"resultLimit": 5000
+		},
+		"type": "SqlQuery"
+	}
+}

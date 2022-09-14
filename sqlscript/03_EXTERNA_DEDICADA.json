@@ -1,0 +1,17 @@
+{
+	"name": "03_EXTERNA_DEDICADA",
+	"properties": {
+		"content": {
+			"query": "CREATE EXTERNAL TABLE [dbo].[D_CATEGORIA]\n(\n\t[ID_CATEGORIA] [int]  NOT NULL,\n\t[NOME_CATEGORIA] [varchar](20) NOT NULL\n)\nWITH\n(\n\tLOCATION = '/silver/categoria',\n\tDATA_SOURCE = [DataSource1],\n\tFILE_FORMAT = [FileFormat1]\n)\n",
+			"metadata": {
+				"language": "sql"
+			},
+			"currentConnection": {
+				"databaseName": "dw01",
+				"poolName": "dw01"
+			},
+			"resultLimit": 5000
+		},
+		"type": "SqlQuery"
+	}
+}
