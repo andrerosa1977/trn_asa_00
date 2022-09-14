@@ -1,6 +1,9 @@
 {
-	"name": "05 SCHEMA DEDICADO",
+	"name": "02 SCHEMA DEDICADO",
 	"properties": {
+		"folder": {
+			"name": "02_SQL_DEDICADO"
+		},
 		"content": {
 			"query": "CREATE SCHEMA BRONZE\nGO\nCREATE SCHEMA SILVER\nGO\nCREATE SCHEMA GOLD",
 			"metadata": {

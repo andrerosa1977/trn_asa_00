@@ -1,8 +1,11 @@
 {
-	"name": "03_EXTERNA_DEDICADA",
+	"name": "06_EXTERNA_DEDICADA_CATEGORIA",
 	"properties": {
+		"folder": {
+			"name": "02_SQL_DEDICADO"
+		},
 		"content": {
-			"query": "CREATE EXTERNAL TABLE [dbo].[D_CATEGORIA]\n(\n\t[ID_CATEGORIA] [int]  NOT NULL,\n\t[NOME_CATEGORIA] [varchar](20) NOT NULL\n)\nWITH\n(\n\tLOCATION = '/silver/categoria',\n\tDATA_SOURCE = [DataSource1],\n\tFILE_FORMAT = [FileFormat1]\n)\n",
+			"query": "CREATE EXTERNAL TABLE SILVER.[D_EXT_CATEGORIA1]\n(\n\t[ID_CATEGORIA] [int]  NOT NULL,\n\t[NOME_CATEGORIA] [varchar](20) NOT NULL\n)\nWITH\n(\n\tLOCATION = '/silver/categoria',\n\tDATA_SOURCE = [treinamento_adlstrnsolar99_dfs_core_windows_net],\n\tFILE_FORMAT = [ParquetFormat]\n)\n",
 			"metadata": {
 				"language": "sql"
 			},

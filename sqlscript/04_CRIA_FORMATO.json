@@ -1,0 +1,20 @@
+{
+	"name": "04_CRIA_FORMATO",
+	"properties": {
+		"folder": {
+			"name": "02_SQL_DEDICADO"
+		},
+		"content": {
+			"query": "IF NOT EXISTS (SELECT * FROM sys.external_file_formats WHERE name = 'ParquetFormat') \n\tCREATE EXTERNAL FILE FORMAT [ParquetFormat] \n\tWITH ( FORMAT_TYPE = PARQUET)\nGO\n\n",
+			"metadata": {
+				"language": "sql"
+			},
+			"currentConnection": {
+				"databaseName": "master",
+				"poolName": "Built-in"
+			},
+			"resultLimit": 5000
+		},
+		"type": "SqlQuery"
+	}
+}
