@@ -15,6 +15,10 @@
 			"type": "secureString",
 			"metadata": "Secure string for 'connectionString' of 'AzureSynapseAnalytics1'"
 		},
+		"AzureSynapseAnalytics2_connectionString": {
+			"type": "secureString",
+			"metadata": "Secure string for 'connectionString' of 'AzureSynapseAnalytics2'"
+		},
 		"SqlServer1_connectionString": {
 			"type": "secureString",
 			"metadata": "Secure string for 'connectionString' of 'SqlServer1'"
@@ -22,10 +26,6 @@
 		"asa-trn-99-WorkspaceDefaultSqlServer_connectionString": {
 			"type": "secureString",
 			"metadata": "Secure string for 'connectionString' of 'asa-trn-99-WorkspaceDefaultSqlServer'"
-		},
-		"AzureSynapseAnalytics2_connectionString": {
-			"type": "secureString",
-			"metadata": "Secure string for 'connectionString' of 'AzureSynapseAnalytics2'"
 		},
 		"asa-trn-99-WorkspaceDefaultStorage_properties_typeProperties_url": {
 			"type": "string",
@@ -818,6 +818,61 @@
 			]
 		},
 		{
+			"name": "[concat(parameters('workspaceName'), '/LOAD CLIENTE SCD')]",
+			"type": "Microsoft.Synapse/workspaces/pipelines",
+			"apiVersion": "2019-06-01-preview",
+			"properties": {
+				"activities": [
+					{
+						"name": "SCD CLIENTE",
+						"type": "ExecuteDataFlow",
+						"dependsOn": [],
+						"policy": {
+							"timeout": "0.12:00:00",
+							"retry": 0,
+							"retryIntervalInSeconds": 30,
+							"secureOutput": false,
+							"secureInput": false
+						},
+						"userProperties": [],
+						"typeProperties": {
+							"dataflow": {
+								"referenceName": "UPDATE_CLIENTE",
+								"type": "DataFlowReference",
+								"parameters": {},
+								"datasetParameters": {
+									"SILVERCLIENTE": {},
+									"dimCLIENTESCD": {},
+									"sink1": {}
+								}
+							},
+							"staging": {
+								"linkedService": {
+									"referenceName": "asa-trn-99-WorkspaceDefaultStorage",
+									"type": "LinkedServiceReference"
+								},
+								"folderPath": "treinamento/staging"
+							},
+							"compute": {
+								"coreCount": 8,
+								"computeType": "General"
+							},
+							"traceLevel": "Fine"
+						}
+					}
+				],
+				"policy": {
+					"elapsedTimeMetric": {},
+					"cancelAfter": {}
+				},
+				"annotations": []
+			},
+			"dependsOn": [
+				"[concat(variables('workspaceId'), '/dataflows/UPDATE_CLIENTE')]",
+				"[concat(variables('workspaceId'), '/linkedServices/asa-trn-99-WorkspaceDefaultStorage')]"
+			]
+		},
+		{
 			"name": "[concat(parameters('workspaceName'), '/CATEGORIA')]",
 			"type": "Microsoft.Synapse/workspaces/datasets",
 			"apiVersion": "2019-06-01-preview",
@@ -938,6 +993,70 @@
 			},
 			"dependsOn": [
 				"[concat(variables('workspaceId'), '/linkedServices/AzureOLTP')]"
+			]
+		},
+		{
+			"name": "[concat(parameters('workspaceName'), '/CLIENTEscd')]",
+			"type": "Microsoft.Synapse/workspaces/datasets",
+			"apiVersion": "2019-06-01-preview",
+			"properties": {
+				"linkedServiceName": {
+					"referenceName": "AzureSynapseAnalytics2",
+					"type": "LinkedServiceReference"
+				},
+				"annotations": [],
+				"type": "AzureSqlDWTable",
+				"schema": [
+					{
+						"name": "ID_CLIENTE",
+						"type": "int",
+						"precision": 10
+					},
+					{
+						"name": "NOME_CLIENTE",
+						"type": "nvarchar"
+					},
+					{
+						"name": "ENDERECO",
+						"type": "nvarchar"
+					},
+					{
+						"name": "NUMERO",
+						"type": "nvarchar"
+					},
+					{
+						"name": "ID_CIDADE",
+						"type": "int",
+						"precision": 10
+					},
+					{
+						"name": "CEP",
+						"type": "nvarchar"
+					},
+					{
+						"name": "InsertedDate",
+						"type": "datetime",
+						"precision": 23,
+						"scale": 3
+					},
+					{
+						"name": "ModifiedDate",
+						"type": "datetime",
+						"precision": 23,
+						"scale": 3
+					},
+					{
+						"name": "HashKey",
+						"type": "char"
+					}
+				],
+				"typeProperties": {
+					"schema": "dbo",
+					"table": "SILVER_CLIENTE_SCD"
+				}
+			},
+			"dependsOn": [
+				"[concat(variables('workspaceId'), '/linkedServices/AzureSynapseAnalytics2')]"
 			]
 		},
 		{
@@ -1825,6 +1944,25 @@
 			]
 		},
 		{
+			"name": "[concat(parameters('workspaceName'), '/AzureSynapseAnalytics2')]",
+			"type": "Microsoft.Synapse/workspaces/linkedServices",
+			"apiVersion": "2019-06-01-preview",
+			"properties": {
+				"annotations": [],
+				"type": "AzureSqlDW",
+				"typeProperties": {
+					"connectionString": "[parameters('AzureSynapseAnalytics2_connectionString')]"
+				},
+				"connectVia": {
+					"referenceName": "AutoResolveIntegrationRuntime",
+					"type": "IntegrationRuntimeReference"
+				}
+			},
+			"dependsOn": [
+				"[concat(variables('workspaceId'), '/integrationRuntimes/AutoResolveIntegrationRuntime')]"
+			]
+		},
+		{
 			"name": "[concat(parameters('workspaceName'), '/SqlServer1')]",
 			"type": "Microsoft.Synapse/workspaces/linkedServices",
 			"apiVersion": "2019-06-01-preview",
@@ -2055,6 +2193,145 @@
 			]
 		},
 		{
+			"name": "[concat(parameters('workspaceName'), '/UPDATE_CLIENTE')]",
+			"type": "Microsoft.Synapse/workspaces/dataflows",
+			"apiVersion": "2019-06-01-preview",
+			"properties": {
+				"type": "MappingDataFlow",
+				"typeProperties": {
+					"sources": [
+						{
+							"dataset": {
+								"referenceName": "CLIENTE",
+								"type": "DatasetReference"
+							},
+							"name": "SILVERCLIENTE"
+						},
+						{
+							"dataset": {
+								"referenceName": "CLIENTEscd",
+								"type": "DatasetReference"
+							},
+							"name": "dimCLIENTESCD"
+						}
+					],
+					"sinks": [
+						{
+							"dataset": {
+								"referenceName": "CLIENTEscd",
+								"type": "DatasetReference"
+							},
+							"name": "sink1"
+						}
+					],
+					"transformations": [
+						{
+							"name": "createclientehash"
+						},
+						{
+							"name": "exists1"
+						},
+						{
+							"name": "lookup1"
+						},
+						{
+							"name": "SetDatas"
+						},
+						{
+							"name": "alterRow1"
+						}
+					],
+					"scriptLines": [
+						"source(output(",
+						"          ID_CLIENTE as integer,",
+						"          NOME_CLIENTE as string,",
+						"          ENDERECO as string,",
+						"          NUMERO as string,",
+						"          ID_CIDADE as integer,",
+						"          CEP as string",
+						"     ),",
+						"     allowSchemaDrift: true,",
+						"     validateSchema: false,",
+						"     isolationLevel: 'READ_UNCOMMITTED',",
+						"     format: 'table') ~> SILVERCLIENTE",
+						"source(output(",
+						"          ID_CLIENTE as integer,",
+						"          NOME_CLIENTE as string,",
+						"          ENDERECO as string,",
+						"          NUMERO as string,",
+						"          ID_CIDADE as integer,",
+						"          CEP as string,",
+						"          InsertedDate as timestamp,",
+						"          ModifiedDate as timestamp,",
+						"          HashKey as string",
+						"     ),",
+						"     allowSchemaDrift: true,",
+						"     validateSchema: false,",
+						"     isolationLevel: 'READ_UNCOMMITTED',",
+						"     format: 'table',",
+						"     staged: true) ~> dimCLIENTESCD",
+						"SILVERCLIENTE derive(HashKey = sha2(256,\r",
+						"iifNull(toString(ID_CLIENTE),'')+\r",
+						"iifNull(NOME_CLIENTE,'')+\r",
+						"iifNull(ENDERECO,'')+\r",
+						"iifNull(NUMERO,'')+\r",
+						"iifNull(toString(ID_CIDADE),'')+\r",
+						"iifNull(toString(CEP),'')\r",
+						")) ~> createclientehash",
+						"createclientehash, dimCLIENTESCD exists(createclientehash@HashKey == dimCLIENTESCD@HashKey,",
+						"     negate:true,",
+						"     broadcast: 'auto')~> exists1",
+						"exists1, dimCLIENTESCD lookup(SILVERCLIENTE@ID_CLIENTE == dimCLIENTESCD@ID_CLIENTE,",
+						"     multiple: false,",
+						"     pickup: 'any',",
+						"     broadcast: 'auto')~> lookup1",
+						"lookup1 derive(InsertedDate = iif(isNull(InsertedDate), currentTimestamp(), InsertedDate),",
+						"          ModifiedDate = currentTimestamp()) ~> SetDatas",
+						"SetDatas alterRow(upsertIf(true())) ~> alterRow1",
+						"alterRow1 sink(allowSchemaDrift: true,",
+						"     validateSchema: false,",
+						"     input(",
+						"          ID_CLIENTE as integer,",
+						"          NOME_CLIENTE as string,",
+						"          ENDERECO as string,",
+						"          NUMERO as string,",
+						"          ID_CIDADE as integer,",
+						"          CEP as string,",
+						"          InsertedDate as timestamp,",
+						"          ModifiedDate as timestamp,",
+						"          HashKey as string",
+						"     ),",
+						"     deletable:false,",
+						"     insertable:false,",
+						"     updateable:false,",
+						"     upsertable:true,",
+						"     keys:['ID_CLIENTE'],",
+						"     format: 'table',",
+						"     staged: true,",
+						"     allowCopyCommand: true,",
+						"     skipDuplicateMapInputs: true,",
+						"     skipDuplicateMapOutputs: true,",
+						"     errorHandlingOption: 'stopOnFirstError',",
+						"     mapColumn(",
+						"          ID_CLIENTE = SILVERCLIENTE@ID_CLIENTE,",
+						"          NOME_CLIENTE = SILVERCLIENTE@NOME_CLIENTE,",
+						"          ENDERECO = SILVERCLIENTE@ENDERECO,",
+						"          NUMERO = SILVERCLIENTE@NUMERO,",
+						"          ID_CIDADE = SILVERCLIENTE@ID_CIDADE,",
+						"          CEP = SILVERCLIENTE@CEP,",
+						"          InsertedDate,",
+						"          ModifiedDate,",
+						"          HashKey = createclientehash@HashKey",
+						"     )) ~> sink1"
+					]
+				}
+			},
+			"dependsOn": [
+				"[concat(variables('workspaceId'), '/datasets/CLIENTE')]",
+				"[concat(variables('workspaceId'), '/datasets/CLIENTEscd')]"
+			]
+		},
+		{
 			"name": "[concat(parameters('workspaceName'), '/WorkspaceSystemIdentity')]",
 			"type": "Microsoft.Synapse/workspaces/credentials",
 			"apiVersion": "2019-06-01-preview",
@@ -2134,6 +2411,29 @@
 			"dependsOn": []
 		},
 		{
+			"name": "[concat(parameters('workspaceName'), '/01_DDM')]",
+			"type": "Microsoft.Synapse/workspaces/sqlscripts",
+			"apiVersion": "2019-06-01-preview",
+			"properties": {
+				"folder": {
+					"name": "99_Outros/03_FEATURES_DEDICADO"
+				},
+				"content": {
+					"query": "",
+					"metadata": {
+						"language": "sql"
+					},
+					"currentConnection": {
+						"databaseName": "master",
+						"poolName": "Built-in"
+					},
+					"resultLimit": 5000
+				},
+				"type": "SqlQuery"
+			},
+			"dependsOn": []
+		},
+		{
 			"name": "[concat(parameters('workspaceName'), '/02 SCHEMA DEDICADO')]",
 			"type": "Microsoft.Synapse/workspaces/sqlscripts",
 			"apiVersion": "2019-06-01-preview",
@@ -2171,6 +2471,52 @@
 					},
 					"currentConnection": {
 						"databaseName": "lhdw",
+						"poolName": "Built-in"
+					},
+					"resultLimit": 5000
+				},
+				"type": "SqlQuery"
+			},
+			"dependsOn": []
+		},
+		{
+			"name": "[concat(parameters('workspaceName'), '/02_RLS')]",
+			"type": "Microsoft.Synapse/workspaces/sqlscripts",
+			"apiVersion": "2019-06-01-preview",
+			"properties": {
+				"folder": {
+					"name": "99_Outros/03_FEATURES_DEDICADO"
+				},
+				"content": {
+					"query": "",
+					"metadata": {
+						"language": "sql"
+					},
+					"currentConnection": {
+						"databaseName": "master",
+						"poolName": "Built-in"
+					},
+					"resultLimit": 5000
+				},
+				"type": "SqlQuery"
+			},
+			"dependsOn": []
+		},
+		{
+			"name": "[concat(parameters('workspaceName'), '/03_CLS')]",
+			"type": "Microsoft.Synapse/workspaces/sqlscripts",
+			"apiVersion": "2019-06-01-preview",
+			"properties": {
+				"folder": {
+					"name": "99_Outros/03_FEATURES_DEDICADO"
+				},
+				"content": {
+					"query": "--https://docs.microsoft.com/pt-br/azure/synapse-analytics/sql-data-warehouse/column-level-security?toc=%2Fazure%2Fsynapse-analytics%2Ftoc.json",
+					"metadata": {
+						"language": "sql"
+					},
+					"currentConnection": {
+						"databaseName": "master",
 						"poolName": "Built-in"
 					},
 					"resultLimit": 5000
@@ -2372,7 +2718,7 @@
 					"name": "02_SQL_DEDICADO"
 				},
 				"content": {
-					"query": "IF NOT EXISTS (SELECT * FROM sys.objects O JOIN sys.schemas S ON O.schema_id = S.schema_id WHERE O.NAME = 'D_BULK_CATEGORIA' AND O.TYPE = 'U' AND S.NAME = 'SILVER')\nCREATE TABLE SILVER.D_BULK_CATEGORIA\n\t(\n\t [ID_CATEGORIA] int,\n\t [NOME_CATEGORIA] nvarchar(4000)\n\t)\nWITH\n\t(\n\tDISTRIBUTION = ROUND_ROBIN,\n\t CLUSTERED COLUMNSTORE INDEX\n\t -- HEAP\n\t)\nGO\n\n--Uncomment the 4 lines below to create a stored procedure for data pipeline orchestration​\n--CREATE PROC bulk_load_D_BULK_CATEGORIA\n--AS\n--BEGIN\n\nCOPY INTO SILVER.D_BULK_CATEGORIA\n(ID_CATEGORIA 1, NOME_CATEGORIA 2)\nFROM 'https://adlstrnsolar99.dfs.core.windows.net/treinamento/silver/categoria'\nWITH\n(\n\tFILE_TYPE = 'PARQUET'\n\t,MAXERRORS = 0\n)\n--END\nGO\n\nSELECT TOP 100 * FROM SILVER.D_BULK_CATEGORIA\nGO\n",
+					"query": "IF NOT EXISTS (SELECT * FROM sys.objects O JOIN sys.schemas S ON O.schema_id = S.schema_id WHERE O.NAME = 'D_BULK_CATEGORIA' AND O.TYPE = 'U' AND S.NAME = 'SILVER')\nCREATE TABLE SILVER.D_BULK_CATEGORIA\n\t(\n\t [ID_CATEGORIA] int,\n\t [NOME_CATEGORIA] nvarchar(4000)\n\t)\nWITH\n\t(\n\tDISTRIBUTION = REPLICATE,\n\t CLUSTERED COLUMNSTORE INDEX\n\t -- HEAP\n\t)\nGO\n\n--Uncomment the 4 lines below to create a stored procedure for data pipeline orchestration​\n--CREATE PROC bulk_load_D_BULK_CATEGORIA\n--AS\n--BEGIN\n\nCOPY INTO SILVER.D_BULK_CATEGORIA\n(ID_CATEGORIA 1, NOME_CATEGORIA 2)\nFROM 'https://adlstrnsolar99.dfs.core.windows.net/treinamento/silver/categoria'\nWITH\n(\n\tFILE_TYPE = 'PARQUET'\n\t,MAXERRORS = 0\n)\n--END\nGO\n\nSELECT TOP 100 * FROM SILVER.D_BULK_CATEGORIA\nGO\n",
 					"metadata": {
 						"language": "sql"
 					},
@@ -2441,7 +2787,7 @@
 					"name": "02_SQL_DEDICADO"
 				},
 				"content": {
-					"query": "IF NOT EXISTS (SELECT * FROM sys.objects O JOIN sys.schemas S ON O.schema_id = S.schema_id WHERE O.NAME = 'D_CIDADE' AND O.TYPE = 'U' AND S.NAME = 'SILVER')\nCREATE TABLE SILVER.D_CIDADE\n\t(\n\t [ID_CIDADE] int,\n\t [NOME_CIDADE] nvarchar(4000),\n\t [UF] nvarchar(4000)\n\t)\nWITH\n\t(\n\tDISTRIBUTION = ROUND_ROBIN,\n\t CLUSTERED COLUMNSTORE INDEX\n\t -- HEAP\n\t)\nGO\n\n--Uncomment the 4 lines below to create a stored procedure for data pipeline orchestration​\n--CREATE PROC bulk_load_D_CIDADE\n--AS\n--BEGIN\nCOPY INTO SILVER.D_CIDADE\n(ID_CIDADE 1, NOME_CIDADE 2, UF 3)\nFROM 'https://adlstrnsolar99.dfs.core.windows.net/treinamento/silver/cidade'\nWITH\n(\n\tFILE_TYPE = 'PARQUET'\n\t,MAXERRORS = 0\n\t,COMPRESSION = 'snappy'\n)\n--END\nGO\n\nSELECT TOP 100 * FROM SILVER.D_CIDADE\nGO",
+					"query": "IF NOT EXISTS (SELECT * FROM sys.objects O JOIN sys.schemas S ON O.schema_id = S.schema_id WHERE O.NAME = 'D_CIDADE' AND O.TYPE = 'U' AND S.NAME = 'SILVER')\nCREATE TABLE SILVER.D_CIDADE\n\t(\n\t [ID_CIDADE] int,\n\t [NOME_CIDADE] nvarchar(4000),\n\t [UF] nvarchar(4000)\n\t)\nWITH\n\t(\n\tDISTRIBUTION = REPLICATE,\n\t CLUSTERED COLUMNSTORE INDEX\n\t -- HEAP\n\t)\nGO\n\n--Uncomment the 4 lines below to create a stored procedure for data pipeline orchestration​\n--CREATE PROC bulk_load_D_CIDADE\n--AS\n--BEGIN\nCOPY INTO SILVER.D_CIDADE\n(ID_CIDADE 1, NOME_CIDADE 2, UF 3)\nFROM 'https://adlstrnsolar99.dfs.core.windows.net/treinamento/silver/cidade'\nWITH\n(\n\tFILE_TYPE = 'PARQUET'\n\t,MAXERRORS = 0\n\t,COMPRESSION = 'snappy'\n)\n--END\nGO\n\nSELECT TOP 100 * FROM SILVER.D_CIDADE\nGO",
 					"metadata": {
 						"language": "sql"
 					},
@@ -2686,7 +3032,7 @@
 			"dependsOn": []
 		},
 		{
-			"name": "[concat(parameters('workspaceName'), '/15_VERIFICAR_TABELA_DEFRAG')]",
+			"name": "[concat(parameters('workspaceName'), '/14_CLIENTE_SCD')]",
 			"type": "Microsoft.Synapse/workspaces/sqlscripts",
 			"apiVersion": "2019-06-01-preview",
 			"properties": {
@@ -2694,7 +3040,7 @@
 					"name": "02_SQL_DEDICADO"
 				},
 				"content": {
-					"query": "DBCC PDW_SHOWSPACEUSED('GOLD.FATO_VENDAS');",
+					"query": "--SQL DEDIDCADO\nCREATE TABLE dbo.SILVER_CLIENTE_SCD\n\t(\n\t [ID_CLIENTE] int,\n\t [NOME_CLIENTE] nvarchar(4000),\n\t [ENDERECO] nvarchar(4000),\n\t [NUMERO] nvarchar(4000),\n\t [ID_CIDADE] int,\n\t [CEP] nvarchar(4000),\n     [InsertedDate] [datetime] NOT NULL,\n     [ModifiedDate] [datetime] NOT NULL,\n     [HashKey] [char](64)\n\t)\nWITH\n\t(\n\tDISTRIBUTION = REPLICATE,\n\t CLUSTERED COLUMNSTORE INDEX\n\t -- HEAP\n\t)\nGO",
 					"metadata": {
 						"language": "sql"
 					},
@@ -2755,7 +3101,7 @@
 			"dependsOn": []
 		},
 		{
-			"name": "[concat(parameters('workspaceName'), '/16_VW_TAMANHO_TABELAS')]",
+			"name": "[concat(parameters('workspaceName'), '/15_VERIFICAR_TABELA_DEFRAG')]",
 			"type": "Microsoft.Synapse/workspaces/sqlscripts",
 			"apiVersion": "2019-06-01-preview",
 			"properties": {
@@ -2763,7 +3109,7 @@
 					"name": "02_SQL_DEDICADO"
 				},
 				"content": {
-					"query": "CREATE VIEW dbo.vTableSizes\nAS\nWITH base\nAS\n(\nSELECT\n GETDATE()                                                             AS  [execution_time]\n, DB_NAME()                                                            AS  [database_name]\n, s.name                                                               AS  [schema_name]\n, t.name                                                               AS  [table_name]\n, QUOTENAME(s.name)+'.'+QUOTENAME(t.name)                              AS  [two_part_name]\n, nt.[name]                                                            AS  [node_table_name]\n, ROW_NUMBER() OVER(PARTITION BY nt.[name] ORDER BY (SELECT NULL))     AS  [node_table_name_seq]\n, tp.[distribution_policy_desc]                                        AS  [distribution_policy_name]\n, c.[name]                                                             AS  [distribution_column]\n, nt.[distribution_id]                                                 AS  [distribution_id]\n, i.[type]                                                             AS  [index_type]\n, i.[type_desc]                                                        AS  [index_type_desc]\n, nt.[pdw_node_id]                                                     AS  [pdw_node_id]\n, pn.[type]                                                            AS  [pdw_node_type]\n, pn.[name]                                                            AS  [pdw_node_name]\n, di.name                                                              AS  [dist_name]\n, di.position                                                          AS  [dist_position]\n, nps.[partition_number]                                               AS  [partition_nmbr]\n, nps.[reserved_page_count]                                            AS  [reserved_space_page_count]\n, nps.[reserved_page_count] - nps.[used_page_count]                    AS  [unused_space_page_count]\n, nps.[in_row_data_page_count]\n    + nps.[row_overflow_used_page_count]\n    + nps.[lob_used_page_count]                                        AS  [data_space_page_count]\n, nps.[reserved_page_count]\n - (nps.[reserved_page_count] - nps.[used_page_count])\n - ([in_row_data_page_count]\n         + [row_overflow_used_page_count]+[lob_used_page_count])       AS  [index_space_page_count]\n, nps.[row_count]                                                      AS  [row_count]\nfrom\n    sys.schemas s\nINNER JOIN sys.tables t\n    ON s.[schema_id] = t.[schema_id]\nINNER JOIN sys.indexes i\n    ON  t.[object_id] = i.[object_id]\n    AND i.[index_id] <= 1\nINNER JOIN sys.pdw_table_distribution_properties tp\n    ON t.[object_id] = tp.[object_id]\nINNER JOIN sys.pdw_table_mappings tm\n    ON t.[object_id] = tm.[object_id]\nINNER JOIN sys.pdw_nodes_tables nt\n    ON tm.[physical_name] = nt.[name]\nINNER JOIN sys.dm_pdw_nodes pn\n    ON  nt.[pdw_node_id] = pn.[pdw_node_id]\nINNER JOIN sys.pdw_distributions di\n    ON  nt.[distribution_id] = di.[distribution_id]\nINNER JOIN sys.dm_pdw_nodes_db_partition_stats nps\n    ON nt.[object_id] = nps.[object_id]\n    AND nt.[pdw_node_id] = nps.[pdw_node_id]\n    AND nt.[distribution_id] = nps.[distribution_id]\nLEFT OUTER JOIN (select * from sys.pdw_column_distribution_properties where distribution_ordinal = 1) cdp\n    ON t.[object_id] = cdp.[object_id]\nLEFT OUTER JOIN sys.columns c\n    ON cdp.[object_id] = c.[object_id]\n    AND cdp.[column_id] = c.[column_id]\nWHERE pn.[type] = 'COMPUTE'\n)\n, size\nAS\n(\nSELECT\n   [execution_time]\n,  [database_name]\n,  [schema_name]\n,  [table_name]\n,  [two_part_name]\n,  [node_table_name]\n,  [node_table_name_seq]\n,  [distribution_policy_name]\n,  [distribution_column]\n,  [distribution_id]\n,  [index_type]\n,  [index_type_desc]\n,  [pdw_node_id]\n,  [pdw_node_type]\n,  [pdw_node_name]\n,  [dist_name]\n,  [dist_position]\n,  [partition_nmbr]\n,  [reserved_space_page_count]\n,  [unused_space_page_count]\n,  [data_space_page_count]\n,  [index_space_page_count]\n,  [row_count]\n,  ([reserved_space_page_count] * 8.0)                                 AS [reserved_space_KB]\n,  ([reserved_space_page_count] * 8.0)/1000                            AS [reserved_space_MB]\n,  ([reserved_space_page_count] * 8.0)/1000000                         AS [reserved_space_GB]\n,  ([reserved_space_page_count] * 8.0)/1000000000                      AS [reserved_space_TB]\n,  ([unused_space_page_count]   * 8.0)                                 AS [unused_space_KB]\n,  ([unused_space_page_count]   * 8.0)/1000                            AS [unused_space_MB]\n,  ([unused_space_page_count]   * 8.0)/1000000                         AS [unused_space_GB]\n,  ([unused_space_page_count]   * 8.0)/1000000000                      AS [unused_space_TB]\n,  ([data_space_page_count]     * 8.0)                                 AS [data_space_KB]\n,  ([data_space_page_count]     * 8.0)/1000                            AS [data_space_MB]\n,  ([data_space_page_count]     * 8.0)/1000000                         AS [data_space_GB]\n,  ([data_space_page_count]     * 8.0)/1000000000                      AS [data_space_TB]\n,  ([index_space_page_count]  * 8.0)                                   AS [index_space_KB]\n,  ([index_space_page_count]  * 8.0)/1000                              AS [index_space_MB]\n,  ([index_space_page_count]  * 8.0)/1000000                           AS [index_space_GB]\n,  ([index_space_page_count]  * 8.0)/1000000000                        AS [index_space_TB]\nFROM base\n)\nSELECT *\nFROM size\n;",
+					"query": "DBCC PDW_SHOWSPACEUSED('GOLD.FATO_VENDAS');",
 					"metadata": {
 						"language": "sql"
 					},
@@ -2824,7 +3170,7 @@
 			"dependsOn": []
 		},
 		{
-			"name": "[concat(parameters('workspaceName'), '/17_VERIFICAR_TABELAS_DEFRAG')]",
+			"name": "[concat(parameters('workspaceName'), '/16_VW_TAMANHO_TABELAS')]",
 			"type": "Microsoft.Synapse/workspaces/sqlscripts",
 			"apiVersion": "2019-06-01-preview",
 			"properties": {
@@ -2832,7 +3178,7 @@
 					"name": "02_SQL_DEDICADO"
 				},
 				"content": {
-					"query": "--Para identificar quais tabelas têm distorção de dados maior de 10%:\nselect *\nfrom dbo.vTableSizes\nwhere two_part_name in\n    (\n    select two_part_name\n    from dbo.vTableSizes\n    where row_count > 0\n    group by two_part_name\n    having (max(row_count * 1.000) - min(row_count * 1.000))/max(row_count * 1.000) >= .10\n    )\norder by two_part_name, row_count\n;",
+					"query": "CREATE VIEW dbo.vTableSizes\nAS\nWITH base\nAS\n(\nSELECT\n GETDATE()                                                             AS  [execution_time]\n, DB_NAME()                                                            AS  [database_name]\n, s.name                                                               AS  [schema_name]\n, t.name                                                               AS  [table_name]\n, QUOTENAME(s.name)+'.'+QUOTENAME(t.name)                              AS  [two_part_name]\n, nt.[name]                                                            AS  [node_table_name]\n, ROW_NUMBER() OVER(PARTITION BY nt.[name] ORDER BY (SELECT NULL))     AS  [node_table_name_seq]\n, tp.[distribution_policy_desc]                                        AS  [distribution_policy_name]\n, c.[name]                                                             AS  [distribution_column]\n, nt.[distribution_id]                                                 AS  [distribution_id]\n, i.[type]                                                             AS  [index_type]\n, i.[type_desc]                                                        AS  [index_type_desc]\n, nt.[pdw_node_id]                                                     AS  [pdw_node_id]\n, pn.[type]                                                            AS  [pdw_node_type]\n, pn.[name]                                                            AS  [pdw_node_name]\n, di.name                                                              AS  [dist_name]\n, di.position                                                          AS  [dist_position]\n, nps.[partition_number]                                               AS  [partition_nmbr]\n, nps.[reserved_page_count]                                            AS  [reserved_space_page_count]\n, nps.[reserved_page_count] - nps.[used_page_count]                    AS  [unused_space_page_count]\n, nps.[in_row_data_page_count]\n    + nps.[row_overflow_used_page_count]\n    + nps.[lob_used_page_count]                                        AS  [data_space_page_count]\n, nps.[reserved_page_count]\n - (nps.[reserved_page_count] - nps.[used_page_count])\n - ([in_row_data_page_count]\n         + [row_overflow_used_page_count]+[lob_used_page_count])       AS  [index_space_page_count]\n, nps.[row_count]                                                      AS  [row_count]\nfrom\n    sys.schemas s\nINNER JOIN sys.tables t\n    ON s.[schema_id] = t.[schema_id]\nINNER JOIN sys.indexes i\n    ON  t.[object_id] = i.[object_id]\n    AND i.[index_id] <= 1\nINNER JOIN sys.pdw_table_distribution_properties tp\n    ON t.[object_id] = tp.[object_id]\nINNER JOIN sys.pdw_table_mappings tm\n    ON t.[object_id] = tm.[object_id]\nINNER JOIN sys.pdw_nodes_tables nt\n    ON tm.[physical_name] = nt.[name]\nINNER JOIN sys.dm_pdw_nodes pn\n    ON  nt.[pdw_node_id] = pn.[pdw_node_id]\nINNER JOIN sys.pdw_distributions di\n    ON  nt.[distribution_id] = di.[distribution_id]\nINNER JOIN sys.dm_pdw_nodes_db_partition_stats nps\n    ON nt.[object_id] = nps.[object_id]\n    AND nt.[pdw_node_id] = nps.[pdw_node_id]\n    AND nt.[distribution_id] = nps.[distribution_id]\nLEFT OUTER JOIN (select * from sys.pdw_column_distribution_properties where distribution_ordinal = 1) cdp\n    ON t.[object_id] = cdp.[object_id]\nLEFT OUTER JOIN sys.columns c\n    ON cdp.[object_id] = c.[object_id]\n    AND cdp.[column_id] = c.[column_id]\nWHERE pn.[type] = 'COMPUTE'\n)\n, size\nAS\n(\nSELECT\n   [execution_time]\n,  [database_name]\n,  [schema_name]\n,  [table_name]\n,  [two_part_name]\n,  [node_table_name]\n,  [node_table_name_seq]\n,  [distribution_policy_name]\n,  [distribution_column]\n,  [distribution_id]\n,  [index_type]\n,  [index_type_desc]\n,  [pdw_node_id]\n,  [pdw_node_type]\n,  [pdw_node_name]\n,  [dist_name]\n,  [dist_position]\n,  [partition_nmbr]\n,  [reserved_space_page_count]\n,  [unused_space_page_count]\n,  [data_space_page_count]\n,  [index_space_page_count]\n,  [row_count]\n,  ([reserved_space_page_count] * 8.0)                                 AS [reserved_space_KB]\n,  ([reserved_space_page_count] * 8.0)/1000                            AS [reserved_space_MB]\n,  ([reserved_space_page_count] * 8.0)/1000000                         AS [reserved_space_GB]\n,  ([reserved_space_page_count] * 8.0)/1000000000                      AS [reserved_space_TB]\n,  ([unused_space_page_count]   * 8.0)                                 AS [unused_space_KB]\n,  ([unused_space_page_count]   * 8.0)/1000                            AS [unused_space_MB]\n,  ([unused_space_page_count]   * 8.0)/1000000                         AS [unused_space_GB]\n,  ([unused_space_page_count]   * 8.0)/1000000000                      AS [unused_space_TB]\n,  ([data_space_page_count]     * 8.0)                                 AS [data_space_KB]\n,  ([data_space_page_count]     * 8.0)/1000                            AS [data_space_MB]\n,  ([data_space_page_count]     * 8.0)/1000000                         AS [data_space_GB]\n,  ([data_space_page_count]     * 8.0)/1000000000                      AS [data_space_TB]\n,  ([index_space_page_count]  * 8.0)                                   AS [index_space_KB]\n,  ([index_space_page_count]  * 8.0)/1000                              AS [index_space_MB]\n,  ([index_space_page_count]  * 8.0)/1000000                           AS [index_space_GB]\n,  ([index_space_page_count]  * 8.0)/1000000000                        AS [index_space_TB]\nFROM base\n)\nSELECT *\nFROM size\n;",
 					"metadata": {
 						"language": "sql"
 					},
@@ -2847,7 +3193,7 @@
 			"dependsOn": []
 		},
 		{
-			"name": "[concat(parameters('workspaceName'), '/18_RESUMO_ESPACO_TABELAS')]",
+			"name": "[concat(parameters('workspaceName'), '/17_VERIFICAR_TABELAS_DEFRAG')]",
 			"type": "Microsoft.Synapse/workspaces/sqlscripts",
 			"apiVersion": "2019-06-01-preview",
 			"properties": {
@@ -2855,7 +3201,7 @@
 					"name": "02_SQL_DEDICADO"
 				},
 				"content": {
-					"query": "--Esta consulta retorna as linhas e o espaço por tabela. \n--Ele permite que você veja quais tabelas são suas maiores tabelas e se \n-- elas são de rodízio, replicadas ou distribuídas por hash. \n-- Nas tabelas distribuídas em hash, a consulta exibe a coluna de distribuição.\nSELECT\n     database_name\n,    schema_name\n,    table_name\n,    distribution_policy_name\n,      distribution_column\n,    index_type_desc\n,    COUNT(distinct partition_nmbr) as nbr_partitions\n,    SUM(row_count)                 as table_row_count\n,    SUM(reserved_space_GB)         as table_reserved_space_GB\n,    SUM(data_space_GB)             as table_data_space_GB\n,    SUM(index_space_GB)            as table_index_space_GB\n,    SUM(unused_space_GB)           as table_unused_space_GB\nFROM\n    dbo.vTableSizes\nGROUP BY\n     database_name\n,    schema_name\n,    table_name\n,    distribution_policy_name\n,      distribution_column\n,    index_type_desc\nORDER BY\n    table_reserved_space_GB desc\n;",
+					"query": "--Para identificar quais tabelas têm distorção de dados maior de 10%:\nselect *\nfrom dbo.vTableSizes\nwhere two_part_name in\n    (\n    select two_part_name\n    from dbo.vTableSizes\n    where row_count > 0\n    group by two_part_name\n    having (max(row_count * 1.000) - min(row_count * 1.000))/max(row_count * 1.000) >= .10\n    )\norder by two_part_name, row_count\n;",
 					"metadata": {
 						"language": "sql"
 					},
@@ -2885,6 +3231,29 @@
 					"currentConnection": {
 						"databaseName": "lhdw",
 						"poolName": "Built-in"
+					},
+					"resultLimit": 5000
+				},
+				"type": "SqlQuery"
+			},
+			"dependsOn": []
+		},
+		{
+			"name": "[concat(parameters('workspaceName'), '/18_RESUMO_ESPACO_TABELAS')]",
+			"type": "Microsoft.Synapse/workspaces/sqlscripts",
+			"apiVersion": "2019-06-01-preview",
+			"properties": {
+				"folder": {
+					"name": "02_SQL_DEDICADO"
+				},
+				"content": {
+					"query": "--Esta consulta retorna as linhas e o espaço por tabela. \n--Ele permite que você veja quais tabelas são suas maiores tabelas e se \n-- elas são de rodízio, replicadas ou distribuídas por hash. \n-- Nas tabelas distribuídas em hash, a consulta exibe a coluna de distribuição.\nSELECT\n     database_name\n,    schema_name\n,    table_name\n,    distribution_policy_name\n,      distribution_column\n,    index_type_desc\n,    COUNT(distinct partition_nmbr) as nbr_partitions\n,    SUM(row_count)                 as table_row_count\n,    SUM(reserved_space_GB)         as table_reserved_space_GB\n,    SUM(data_space_GB)             as table_data_space_GB\n,    SUM(index_space_GB)            as table_index_space_GB\n,    SUM(unused_space_GB)           as table_unused_space_GB\nFROM\n    dbo.vTableSizes\nGROUP BY\n     database_name\n,    schema_name\n,    table_name\n,    distribution_policy_name\n,      distribution_column\n,    index_type_desc\nORDER BY\n    table_reserved_space_GB desc\n;",
+					"metadata": {
+						"language": "sql"
+					},
+					"currentConnection": {
+						"databaseName": "dw01",
+						"poolName": "dw01"
 					},
 					"resultLimit": 5000
 				},
@@ -3445,7 +3814,7 @@
 						"spark.dynamicAllocation.enabled": "false",
 						"spark.dynamicAllocation.minExecutors": "2",
 						"spark.dynamicAllocation.maxExecutors": "2",
-						"spark.autotune.trackingId": "0f0f3a96-1cc0-4c77-8d8a-400f6436035a"
+						"spark.autotune.trackingId": "a79a7b69-a214-4d4e-b47f-29a87b2290de"
 					}
 				},
 				"metadata": {
@@ -3463,7 +3832,6 @@
 				"cells": [
 					{
 						"cell_type": "code",
-						"metadata": {},
 						"source": [
 							""
 						],
@@ -3609,7 +3977,7 @@
 						"spark.dynamicAllocation.enabled": "false",
 						"spark.dynamicAllocation.minExecutors": "2",
 						"spark.dynamicAllocation.maxExecutors": "2",
-						"spark.autotune.trackingId": "33c7a0e0-7df4-4baf-859b-bad43c92cadf"
+						"spark.autotune.trackingId": "957f2b22-bdeb-4bfd-bac6-78ba9e405732"
 					}
 				},
 				"metadata": {
@@ -3627,7 +3995,6 @@
 				"cells": [
 					{
 						"cell_type": "code",
-						"metadata": {},
 						"source": [
 							""
 						],
@@ -3662,7 +4029,7 @@
 						"spark.dynamicAllocation.enabled": "true",
 						"spark.dynamicAllocation.minExecutors": "1",
 						"spark.dynamicAllocation.maxExecutors": "4",
-						"spark.autotune.trackingId": "b30df0c4-7146-49f9-9b5f-178cf870340e"
+						"spark.autotune.trackingId": "fb39d81b-2f3e-4872-bb0c-211e21e55289"
 					}
 				},
 				"metadata": {
@@ -3687,8 +4054,7 @@
 						"sparkVersion": "3.2",
 						"nodeCount": 10,
 						"cores": 4,
-						"memory": 28,
-						"automaticScaleJobs": true
+						"memory": 28
 					},
 					"sessionKeepAliveTimeout": 30
 				},
@@ -4309,7 +4675,7 @@
 						"spark.dynamicAllocation.enabled": "false",
 						"spark.dynamicAllocation.minExecutors": "2",
 						"spark.dynamicAllocation.maxExecutors": "2",
-						"spark.autotune.trackingId": "95314ac0-8f7a-45ca-ad0f-873167fb5277"
+						"spark.autotune.trackingId": "c70569af-a898-4d01-8235-23522e90d8c3"
 					}
 				},
 				"metadata": {
@@ -4327,7 +4693,6 @@
 				"cells": [
 					{
 						"cell_type": "code",
-						"metadata": {},
 						"source": [
 							""
 						],
@@ -4865,7 +5230,7 @@
 						"spark.dynamicAllocation.enabled": "false",
 						"spark.dynamicAllocation.minExecutors": "2",
 						"spark.dynamicAllocation.maxExecutors": "2",
-						"spark.autotune.trackingId": "42f58469-bf54-41e6-a225-3975d742a1fe"
+						"spark.autotune.trackingId": "5e3beb58-8929-46bb-8e70-571f46a72b6c"
 					}
 				},
 				"metadata": {
@@ -5173,6 +5538,18 @@
 			"dependsOn": []
 		},
 		{
+			"name": "[concat(parameters('workspaceName'), '/dw01')]",
+			"type": "Microsoft.Synapse/workspaces/sqlPools",
+			"apiVersion": "2019-06-01-preview",
+			"properties": {
+				"collation": "SQL_Latin1_General_CP1_CI_AS",
+				"maxSizeBytes": 263882790666240,
+				"annotations": []
+			},
+			"dependsOn": [],
+			"location": "southcentralus"
+		},
+		{
 			"name": "[concat(parameters('workspaceName'), '/Cluster1')]",
 			"type": "Microsoft.Synapse/workspaces/bigDataPools",
 			"apiVersion": "2019-06-01-preview",
@@ -5198,19 +5575,7 @@
 			"location": "southcentralus"
 		},
 		{
-			"name": "[concat(parameters('workspaceName'), '/dw01')]",
-			"type": "Microsoft.Synapse/workspaces/sqlPools",
-			"apiVersion": "2019-06-01-preview",
-			"properties": {
-				"collation": "SQL_Latin1_General_CP1_CI_AS",
-				"maxSizeBytes": 263882790666240,
-				"annotations": []
-			},
-			"dependsOn": [],
-			"location": "southcentralus"
-		},
-		{
-			"name": "[concat(parameters('workspaceName'), '/14_CLIENTE_SCD')]",
+			"name": "[concat(parameters('workspaceName'), '/99_ddm')]",
 			"type": "Microsoft.Synapse/workspaces/sqlscripts",
 			"apiVersion": "2019-06-01-preview",
 			"properties": {
@@ -5218,306 +5583,7 @@
 					"name": "02_SQL_DEDICADO"
 				},
 				"content": {
-					"query": "--SQL DEDIDCADO\nCREATE TABLE dbo.SILVER_CLIENTE_SCD\n\t(\n\t [ID_CLIENTE] int,\n\t [NOME_CLIENTE] nvarchar(4000),\n\t [ENDERECO] nvarchar(4000),\n\t [NUMERO] nvarchar(4000),\n\t [ID_CIDADE] int,\n\t [CEP] nvarchar(4000),\n     [InsertedDate] [datetime] NOT NULL,\n     [ModifiedDate] [datetime] NOT NULL,\n     [HashKey] [char](64)\n\t)\nWITH\n\t(\n\tDISTRIBUTION = REPLICATE,\n\t CLUSTERED COLUMNSTORE INDEX\n\t -- HEAP\n\t)\nGO",
-					"metadata": {
-						"language": "sql"
-					},
-					"currentConnection": {
-						"databaseName": "dw01",
-						"poolName": "dw01"
-					},
-					"resultLimit": 5000
-				},
-				"type": "SqlQuery"
-			},
-			"dependsOn": []
-		},
-		{
-			"name": "[concat(parameters('workspaceName'), '/LOAD CLIENTE SCD')]",
-			"type": "Microsoft.Synapse/workspaces/pipelines",
-			"apiVersion": "2019-06-01-preview",
-			"properties": {
-				"activities": [
-					{
-						"name": "SCD CLIENTE",
-						"type": "ExecuteDataFlow",
-						"dependsOn": [],
-						"policy": {
-							"timeout": "0.12:00:00",
-							"retry": 0,
-							"retryIntervalInSeconds": 30,
-							"secureOutput": false,
-							"secureInput": false
-						},
-						"userProperties": [],
-						"typeProperties": {
-							"dataflow": {
-								"referenceName": "UPDATE_CLIENTE",
-								"type": "DataFlowReference",
-								"parameters": {},
-								"datasetParameters": {
-									"SILVERCLIENTE": {},
-									"dimCLIENTESCD": {},
-									"sink1": {}
-								},
-								"linkedServiceParameters": {}
-							},
-							"staging": {
-								"linkedService": {
-									"referenceName": "asa-trn-99-WorkspaceDefaultStorage",
-									"type": "LinkedServiceReference"
-								},
-								"folderPath": "treinamento/staging"
-							},
-							"compute": {
-								"coreCount": 8,
-								"computeType": "General"
-							},
-							"traceLevel": "Fine"
-						}
-					}
-				],
-				"policy": {
-					"elapsedTimeMetric": {},
-					"cancelAfter": {}
-				},
-				"annotations": []
-			},
-			"dependsOn": [
-				"[concat(variables('workspaceId'), '/integrationRuntimes/AutoResolveIntegrationRuntime')]",
-				"[concat(variables('workspaceId'), '/dataflows/UPDATE_CLIENTE')]",
-				"[concat(variables('workspaceId'), '/linkedServices/asa-trn-99-WorkspaceDefaultStorage')]"
-			]
-		},
-		{
-			"name": "[concat(parameters('workspaceName'), '/UPDATE_CLIENTE')]",
-			"type": "Microsoft.Synapse/workspaces/dataflows",
-			"apiVersion": "2019-06-01-preview",
-			"properties": {
-				"type": "MappingDataFlow",
-				"typeProperties": {
-					"sources": [
-						{
-							"dataset": {
-								"referenceName": "CLIENTE",
-								"type": "DatasetReference"
-							},
-							"name": "SILVERCLIENTE"
-						},
-						{
-							"dataset": {
-								"referenceName": "CLIENTEscd",
-								"type": "DatasetReference"
-							},
-							"name": "dimCLIENTESCD"
-						}
-					],
-					"sinks": [
-						{
-							"dataset": {
-								"referenceName": "CLIENTEscd",
-								"type": "DatasetReference"
-							},
-							"name": "sink1"
-						}
-					],
-					"transformations": [
-						{
-							"name": "createclientehash"
-						},
-						{
-							"name": "exists1"
-						},
-						{
-							"name": "lookup1"
-						},
-						{
-							"name": "SetDatas"
-						},
-						{
-							"name": "alterRow1"
-						}
-					],
-					"scriptLines": [
-						"source(output(",
-						"          ID_CLIENTE as integer,",
-						"          NOME_CLIENTE as string,",
-						"          ENDERECO as string,",
-						"          NUMERO as string,",
-						"          ID_CIDADE as integer,",
-						"          CEP as string",
-						"     ),",
-						"     allowSchemaDrift: true,",
-						"     validateSchema: false,",
-						"     isolationLevel: 'READ_UNCOMMITTED',",
-						"     format: 'table') ~> SILVERCLIENTE",
-						"source(output(",
-						"          ID_CLIENTE as integer,",
-						"          NOME_CLIENTE as string,",
-						"          ENDERECO as string,",
-						"          NUMERO as string,",
-						"          ID_CIDADE as integer,",
-						"          CEP as string,",
-						"          InsertedDate as timestamp,",
-						"          ModifiedDate as timestamp,",
-						"          HashKey as string",
-						"     ),",
-						"     allowSchemaDrift: true,",
-						"     validateSchema: false,",
-						"     isolationLevel: 'READ_UNCOMMITTED',",
-						"     format: 'table',",
-						"     staged: true) ~> dimCLIENTESCD",
-						"SILVERCLIENTE derive(HashKey = sha2(256,\r",
-						"iifNull(toString(ID_CLIENTE),'')+\r",
-						"iifNull(NOME_CLIENTE,'')+\r",
-						"iifNull(ENDERECO,'')+\r",
-						"iifNull(NUMERO,'')+\r",
-						"iifNull(toString(ID_CIDADE),'')+\r",
-						"iifNull(toString(CEP),'')\r",
-						")) ~> createclientehash",
-						"createclientehash, dimCLIENTESCD exists(createclientehash@HashKey == dimCLIENTESCD@HashKey,",
-						"     negate:true,",
-						"     broadcast: 'auto')~> exists1",
-						"exists1, dimCLIENTESCD lookup(SILVERCLIENTE@ID_CLIENTE == dimCLIENTESCD@ID_CLIENTE,",
-						"     multiple: false,",
-						"     pickup: 'any',",
-						"     broadcast: 'auto')~> lookup1",
-						"lookup1 derive(InsertedDate = iif(isNull(InsertedDate), currentTimestamp(), InsertedDate),",
-						"          ModifiedDate = currentTimestamp()) ~> SetDatas",
-						"SetDatas alterRow(upsertIf(true())) ~> alterRow1",
-						"alterRow1 sink(allowSchemaDrift: true,",
-						"     validateSchema: false,",
-						"     input(",
-						"          ID_CLIENTE as integer,",
-						"          NOME_CLIENTE as string,",
-						"          ENDERECO as string,",
-						"          NUMERO as string,",
-						"          ID_CIDADE as integer,",
-						"          CEP as string,",
-						"          InsertedDate as timestamp,",
-						"          ModifiedDate as timestamp,",
-						"          HashKey as string",
-						"     ),",
-						"     deletable:false,",
-						"     insertable:false,",
-						"     updateable:false,",
-						"     upsertable:true,",
-						"     keys:['ID_CLIENTE'],",
-						"     format: 'table',",
-						"     staged: true,",
-						"     allowCopyCommand: true,",
-						"     skipDuplicateMapInputs: true,",
-						"     skipDuplicateMapOutputs: true,",
-						"     errorHandlingOption: 'stopOnFirstError',",
-						"     mapColumn(",
-						"          ID_CLIENTE = SILVERCLIENTE@ID_CLIENTE,",
-						"          NOME_CLIENTE = SILVERCLIENTE@NOME_CLIENTE,",
-						"          ENDERECO = SILVERCLIENTE@ENDERECO,",
-						"          NUMERO = SILVERCLIENTE@NUMERO,",
-						"          ID_CIDADE = SILVERCLIENTE@ID_CIDADE,",
-						"          CEP = SILVERCLIENTE@CEP,",
-						"          InsertedDate,",
-						"          ModifiedDate,",
-						"          HashKey = createclientehash@HashKey",
-						"     )) ~> sink1"
-					]
-				}
-			},
-			"dependsOn": [
-				"[concat(variables('workspaceId'), '/datasets/CLIENTE')]",
-				"[concat(variables('workspaceId'), '/datasets/CLIENTEscd')]"
-			]
-		},
-		{
-			"name": "[concat(parameters('workspaceName'), '/AzureSynapseAnalytics2')]",
-			"type": "Microsoft.Synapse/workspaces/linkedServices",
-			"apiVersion": "2019-06-01-preview",
-			"properties": {
-				"annotations": [],
-				"type": "AzureSqlDW",
-				"typeProperties": {
-					"connectionString": "[parameters('AzureSynapseAnalytics2_connectionString')]"
-				},
-				"connectVia": {
-					"referenceName": "AutoResolveIntegrationRuntime",
-					"type": "IntegrationRuntimeReference"
-				}
-			},
-			"dependsOn": [
-				"[concat(variables('workspaceId'), '/integrationRuntimes/AutoResolveIntegrationRuntime')]"
-			]
-		},
-		{
-			"name": "[concat(parameters('workspaceName'), '/CLIENTEscd')]",
-			"type": "Microsoft.Synapse/workspaces/datasets",
-			"apiVersion": "2019-06-01-preview",
-			"properties": {
-				"linkedServiceName": {
-					"referenceName": "AzureSynapseAnalytics2",
-					"type": "LinkedServiceReference"
-				},
-				"annotations": [],
-				"type": "AzureSqlDWTable",
-				"schema": [
-					{
-						"name": "ID_CLIENTE",
-						"type": "int",
-						"precision": 10
-					},
-					{
-						"name": "NOME_CLIENTE",
-						"type": "nvarchar"
-					},
-					{
-						"name": "ENDERECO",
-						"type": "nvarchar"
-					},
-					{
-						"name": "NUMERO",
-						"type": "nvarchar"
-					},
-					{
-						"name": "ID_CIDADE",
-						"type": "int",
-						"precision": 10
-					},
-					{
-						"name": "CEP",
-						"type": "nvarchar"
-					},
-					{
-						"name": "InsertedDate",
-						"type": "datetime",
-						"precision": 23,
-						"scale": 3
-					},
-					{
-						"name": "ModifiedDate",
-						"type": "datetime",
-						"precision": 23,
-						"scale": 3
-					},
-					{
-						"name": "HashKey",
-						"type": "char"
-					}
-				],
-				"typeProperties": {
-					"schema": "dbo",
-					"table": "SILVER_CLIENTE_SCD"
-				}
-			},
-			"dependsOn": [
-				"[concat(variables('workspaceId'), '/linkedServices/AzureSynapseAnalytics2')]"
-			]
-		},
-		{
-			"name": "[concat(parameters('workspaceName'), '/SQL script 1')]",
-			"type": "Microsoft.Synapse/workspaces/sqlscripts",
-			"apiVersion": "2019-06-01-preview",
-			"properties": {
-				"content": {
-					"query": "SELECT TOP (100) [ID_CLIENTE]\n,[NOME_CLIENTE]\n,[ENDERECO]\n,[NUMERO]\n,[ID_CIDADE]\n,[CEP]\n,[InsertedDate]\n,[ModifiedDate]\n,[HashKey]\n FROM [dbo].[SILVER_CLIENTE_SCD]",
+					"query": "IF NOT EXISTS (SELECT * FROM sys.objects O JOIN sys.schemas S ON O.schema_id = S.schema_id WHERE O.NAME = 'SILVER_CLIENTE_DDM' AND O.TYPE = 'U' AND S.NAME = 'dbo')\nCREATE TABLE dbo.SILVER_CLIENTE_DDM\n\t(\n\t [ID_CLIENTE] int,\n     [CPF] VARCHAR(14),\n     [EMAIL]VARCHAR(50),\n\t [NOME_CLIENTE] nvarchar(4000),\n\t [ENDERECO] nvarchar(4000),\n\t [NUMERO] nvarchar(4000),\n\t [ID_CIDADE] int,\n\t [CEP] nvarchar(4000)\n\t)\nWITH\n\t(\n\tDISTRIBUTION = ROUND_ROBIN,\n\t CLUSTERED COLUMNSTORE INDEX\n\t -- HEAP\n\t)\nGO\n\nselect * from dbo.SILVER_CLIENTE_DDM\n",
 					"metadata": {
 						"language": "sql"
 					},
