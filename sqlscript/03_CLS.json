@@ -1,0 +1,20 @@
+{
+	"name": "03_CLS",
+	"properties": {
+		"folder": {
+			"name": "01_SERVERLESS/03_FEATURES_DEDICADO"
+		},
+		"content": {
+			"query": "--https://docs.microsoft.com/pt-br/azure/synapse-analytics/sql-data-warehouse/column-level-security?toc=%2Fazure%2Fsynapse-analytics%2Ftoc.json",
+			"metadata": {
+				"language": "sql"
+			},
+			"currentConnection": {
+				"databaseName": "master",
+				"poolName": "Built-in"
+			},
+			"resultLimit": 5000
+		},
+		"type": "SqlQuery"
+	}
+}
