@@ -1,17 +1,17 @@
 {
-	"name": "02_RLS",
+	"name": "01_RLS",
 	"properties": {
 		"folder": {
-			"name": "01_SERVERLESS/03_FEATURES_DEDICADO"
+			"name": "03_FEATURES_DEDICADO"
 		},
 		"content": {
-			"query": "",
+			"query": "\n--RLS\n/*A. Cenário para usuários que se autenticam no banco de dados\nEste exemplo cria três usuários e cria e preenche uma tabela com seis linhas. Em seguida, ele cria uma função com valor de tabela embutida e uma política de segurança para a tabela. O exemplo mostra como as instruções select são filtradas para os vários usuários.\nref https://docs.microsoft.com/pt-br/sql/relational-databases/security/row-level-security?context=%2Fazure%2Fsynapse-analytics%2Fcontext%2Fcontext&view=sql-server-ver16\n*/\n\n--Crie três contas de usuário que demonstrarão diferentes recursos de acesso.\n\nCREATE USER gerente WITHOUT LOGIN;  \nCREATE USER vendedor1 WITHOUT LOGIN;  \nCREATE USER vendedor2 WITHOUT LOGIN;\nGO\n\n/*\nCrie uma tabela para armazenar dados.\n*/\n\nCREATE SCHEMA vendas\nGO\nCREATE TABLE vendas.pedidos \n    (  \n    PedidoID int,  \n    Vendedor nvarchar(50),  \n    Produto nvarchar(50),  \n    Quantidade smallint  \n    );\n\n/*\nPreencha a tabela com seis linhas de dados, mostrando três pedidos para cada representante de vendas.\n */ \n\nINSERT INTO vendas.pedidos  VALUES (1, 'vendedor1', 'Coca-Cola', 5);\nINSERT INTO vendas.pedidos  VALUES (2, 'vendedor1', 'Fanta', 2);\nINSERT INTO vendas.pedidos  VALUES (3, 'vendedor1', 'Coca-Cola', 4);\nINSERT INTO vendas.pedidos  VALUES (4, 'vendedor2', 'Fanta', 2);\nINSERT INTO vendas.pedidos  VALUES (5, 'vendedor2', 'Fanta', 5);\nINSERT INTO vendas.pedidos  VALUES (6, 'vendedor2', 'Coca-Cola', 5);\n\n-- Analise insert\nSELECT * FROM vendas.pedidos ;\n\n--Conceda acesso de leitura na tabela a cada um dos usuários.\nGRANT SELECT ON vendas.pedidos  TO gerente;  \nGRANT SELECT ON vendas.pedidos  TO vendedor1;  \nGRANT SELECT ON vendas.pedidos  TO vendedor2; \nGO\n/*\nCrie um novo esquema e uma função com valor de tabela embutida. \nA função retorna 1 quando uma linha na coluna vendedor é igual ao usuário que executa a \nconsulta ( @vendedor = USER_NAME()) ou se o usuário que executa a consulta é o usuário Gerente\n ( USER_NAME() = 'gerente').\n*/\nCREATE SCHEMA seguranca;  \nGO  \n  \nCREATE FUNCTION seguranca.tvf_segurancapredicada(@vendedor AS nvarchar(50))  \n    RETURNS TABLE  \nWITH SCHEMABINDING  \nAS  \n    RETURN SELECT 1 AS tvf_segurancapredicada_result\nWHERE @vendedor = USER_NAME() OR USER_NAME() = 'gerente';  \nGO\n\n/*\nCrie uma política de segurança adicionando a função como um predicado de filtro. \nO estado deve ser definido como ON para habilitar a política.\n*/\n\nCREATE SECURITY POLICY FiltroVendas\nADD FILTER PREDICATE seguranca.tvf_segurancapredicada(Vendedor)\nON vendas.pedidos\nWITH (STATE = ON);  \nGO\n\n--Permitir permissões SELECT para a função fn_securitypredicate\nGRANT SELECT ON seguranca.tvf_segurancapredicada TO gerente;  \nGRANT SELECT ON seguranca.tvf_segurancapredicada TO vendedor1;  \nGRANT SELECT ON seguranca.tvf_segurancapredicada TO vendedor2;\n\nAgora teste o predicado de filtragem, selecionando na tabela Sales como cada usuário.\nEXECUTE AS USER = 'vendedor1';  \nSELECT * FROM vendas.pedidos;\nREVERT;  \n  \nEXECUTE AS USER = 'vendedor2';  \nSELECT * FROM vendas.pedidos;\nREVERT;  \n  \nEXECUTE AS USER = 'gerente';  \nSELECT * FROM vendas.pedidos;\nREVERT;\n\n--Altere a política de segurança para desativá-la.\nALTER SECURITY POLICY FiltroVendas  \nWITH (STATE = OFF);\n\n--Conecte-se ao banco de dados SQL para limpar recursos\nDROP USER vendedor1;\nDROP USER vendedor2;\nDROP USER gerente;\n\nDROP SECURITY POLICY FiltroVendas;\nDROP TABLE vendas.pedidos;\nDROP FUNCTION seguranca.tvf_segurancapredicada;\nDROP SCHEMA seguranca;\nDROP SCHEMA vendas;\n",
 			"metadata": {
 				"language": "sql"
 			},
 			"currentConnection": {
-				"databaseName": "master",
-				"poolName": "Built-in"
+				"databaseName": "dw01",
+				"poolName": "dw01"
 			},
 			"resultLimit": 5000
 		},

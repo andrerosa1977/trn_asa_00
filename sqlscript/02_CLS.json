@@ -1,11 +1,11 @@
 {
-	"name": "03_CLS",
+	"name": "02_CLS",
 	"properties": {
 		"folder": {
-			"name": "01_SERVERLESS/03_FEATURES_DEDICADO"
+			"name": "03_FEATURES_DEDICADO"
 		},
 		"content": {
-			"query": "--https://docs.microsoft.com/pt-br/azure/synapse-analytics/sql-data-warehouse/column-level-security?toc=%2Fazure%2Fsynapse-analytics%2Ftoc.json",
+			"query": "/*\nref\nhttps://docs.microsoft.com/pt-br/azure/synapse-analytics/sql-data-warehouse/column-level-security?context=%2Fazure%2Fsynapse-analytics%2Fcontext%2Fcontext&view=sql-server-ver16\nSegurança a nivel de coluna\nSegurança de Nível de Coluna permite que os clientes controlem o acesso às colunas da tabela com \nbase no contexto de execução do usuário ou associação de grupo.\n*/\n\n--Crie a tabela Memboros com a coluna CPF usada para armazenar números de CADASTRO DE PESSOA FÍSICA.:\n\nCREATE TABLE membros\n  (membroID int IDENTITY,\n   Nome varchar(100) NULL,\n   CPF char(14) NOT NULL,\n   Sobrenome varchar(100) NOT NULL,\n   telefone varchar(12) NULL,\n   Email varchar(100) NULL);\n\n--Cria usuarios para teste\n--Crie três contas de usuário que demonstrarão diferentes recursos de acesso.\n\nCREATE USER gerente WITHOUT LOGIN;  \nCREATE USER estagiario WITHOUT LOGIN;  \n\n--Permita que estagiario acesse todas as colunas, exceto a coluna CPF, que tem os dados confidenciais:\n\nGRANT SELECT ON membros(membroID, Nome, Sobrenome, telefone, Email) TO estagiario;\n\n--Teste estagiario\nEXECUTE AS USER = 'estagiario';  \nSELECT * FROM membros;\nREVERT; \n\n--Teste estagiario\nEXECUTE AS USER = 'gerente';  \nSELECT * FROM membros;\nREVERT; ",
 			"metadata": {
 				"language": "sql"
 			},
