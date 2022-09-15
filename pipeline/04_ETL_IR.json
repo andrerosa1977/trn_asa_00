@@ -24,7 +24,14 @@
 						"type": "SqlPoolSink",
 						"allowCopyCommand": true
 					},
-					"enableStaging": false
+					"enableStaging": true,
+					"stagingSettings": {
+						"linkedServiceName": {
+							"referenceName": "asa-trn-99-WorkspaceDefaultStorage",
+							"type": "LinkedServiceReference"
+						},
+						"path": "treinamento/staging"
+					}
 				},
 				"inputs": [
 					{
