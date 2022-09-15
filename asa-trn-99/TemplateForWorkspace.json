@@ -2411,15 +2411,15 @@
 			"dependsOn": []
 		},
 		{
-			"name": "[concat(parameters('workspaceName'), '/01_DDM')]",
+			"name": "[concat(parameters('workspaceName'), '/03_DDM')]",
 			"type": "Microsoft.Synapse/workspaces/sqlscripts",
 			"apiVersion": "2019-06-01-preview",
 			"properties": {
 				"folder": {
-					"name": "99_Outros/03_FEATURES_DEDICADO"
+					"name": "03_FEATURES_DEDICADO"
 				},
 				"content": {
-					"query": "",
+					"query": "    -------------------------------------------------------------------------Dynamic Data Masking (DDM)----------------------------------------------------------------------------------------------------------\n    /*  Dynamic data masking helps prevent unauthorized access to sensitive data by enabling customers\n        to designate how much of the sensitive data to reveal with minimal impact on the application layer.\n        Let see how */\n\n    /* Scenario: WWI has identified sensitive information in the CustomerInfo table. They would like us to \n        obfuscate the CreditCard and Email columns of the CustomerInfo table to DataAnalysts */\n\n    -- Step:1 Let us first get a view of CustomerInfo table.\n    SELECT TOP (100) * FROM wwi_security.CustomerInfo;\n\n    -- Step:2 Let's confirm that there are no Dynamic Data Masking (DDM) applied on columns.\n    SELECT c.name, tbl.name as table_name, c.is_masked, c.masking_function  \n    FROM sys.masked_columns AS c  \n    JOIN sys.tables AS tbl\n        ON c.[object_id] = tbl.[object_id]  \n    WHERE is_masked = 1\n        AND tbl.name = 'CustomerInfo';\n    -- No results returned verify that no data masking has been done yet.\n\n    -- Step:3 Now lets mask 'CreditCard' and 'Email' Column of 'CustomerInfo' table.\n    ALTER TABLE wwi_security.CustomerInfo  \n    ALTER COLUMN [CreditCard] ADD MASKED WITH (FUNCTION = 'partial(0,\"XXXX-XXXX-XXXX-\",4)');\n    GO\n    ALTER TABLE wwi_security.CustomerInfo\n    ALTER COLUMN Email ADD MASKED WITH (FUNCTION = 'email()');\n    GO\n    -- The columns are sucessfully masked.\n\n    -- Step:4 Let's see Dynamic Data Masking (DDM) applied on the two columns.\n    SELECT c.name, tbl.name as table_name, c.is_masked, c.masking_function  \n    FROM sys.masked_columns AS c  \n    JOIN sys.tables AS tbl\n        ON c.[object_id] = tbl.[object_id]  \n    WHERE is_masked = 1\n        AND tbl.name ='CustomerInfo';\n\n    -- Step:5 Now, let us grant SELECT permission to 'DataAnalystMiami' on the 'CustomerInfo' table.\n   GRANT SELECT ON wwi_security.CustomerInfo TO DataAnalystMiami;  \n\n    -- Step:6 Logged in as  'DataAnalystMiami' let us execute the select query and view the result.\n    EXECUTE AS USER = 'DataAnalystMiami';  \n    SELECT * FROM wwi_security.CustomerInfo;\n\n    -- Step:7 Let us remove the data masking using UNMASK permission\n    GRANT UNMASK TO DataAnalystMiami;\n    EXECUTE AS USER = 'DataAnalystMiami';  \n    SELECT *\n    FROM wwi_security.CustomerInfo;\n    revert;\n    REVOKE UNMASK TO DataAnalystMiami;  \n\n    ----step:8 Reverting all the changes back to as it was.\n    ALTER TABLE wwi_security.CustomerInfo\n    ALTER COLUMN CreditCard DROP MASKED;\n    GO\n    ALTER TABLE wwi_security.CustomerInfo\n    ALTER COLUMN Email DROP MASKED;\n    GO",
 					"metadata": {
 						"language": "sql"
 					},
@@ -2480,21 +2480,21 @@
 			"dependsOn": []
 		},
 		{
-			"name": "[concat(parameters('workspaceName'), '/02_RLS')]",
+			"name": "[concat(parameters('workspaceName'), '/01_RLS')]",
 			"type": "Microsoft.Synapse/workspaces/sqlscripts",
 			"apiVersion": "2019-06-01-preview",
 			"properties": {
 				"folder": {
-					"name": "99_Outros/03_FEATURES_DEDICADO"
+					"name": "03_FEATURES_DEDICADO"
 				},
 				"content": {
-					"query": "",
+					"query": "\n--RLS\n/*A. Cenário para usuários que se autenticam no banco de dados\nEste exemplo cria três usuários e cria e preenche uma tabela com seis linhas. Em seguida, ele cria uma função com valor de tabela embutida e uma política de segurança para a tabela. O exemplo mostra como as instruções select são filtradas para os vários usuários.\nref https://docs.microsoft.com/pt-br/sql/relational-databases/security/row-level-security?context=%2Fazure%2Fsynapse-analytics%2Fcontext%2Fcontext&view=sql-server-ver16\n*/\n\n--Crie três contas de usuário que demonstrarão diferentes recursos de acesso.\n\nCREATE USER gerente WITHOUT LOGIN;  \nCREATE USER vendedor1 WITHOUT LOGIN;  \nCREATE USER vendedor2 WITHOUT LOGIN;\nGO\n\n/*\nCrie uma tabela para armazenar dados.\n*/\n\nCREATE SCHEMA vendas\nGO\nCREATE TABLE vendas.pedidos \n    (  \n    PedidoID int,  \n    Vendedor nvarchar(50),  \n    Produto nvarchar(50),  \n    Quantidade smallint  \n    );\n\n/*\nPreencha a tabela com seis linhas de dados, mostrando três pedidos para cada representante de vendas.\n */ \n\nINSERT INTO vendas.pedidos  VALUES (1, 'vendedor1', 'Coca-Cola', 5);\nINSERT INTO vendas.pedidos  VALUES (2, 'vendedor1', 'Fanta', 2);\nINSERT INTO vendas.pedidos  VALUES (3, 'vendedor1', 'Coca-Cola', 4);\nINSERT INTO vendas.pedidos  VALUES (4, 'vendedor2', 'Fanta', 2);\nINSERT INTO vendas.pedidos  VALUES (5, 'vendedor2', 'Fanta', 5);\nINSERT INTO vendas.pedidos  VALUES (6, 'vendedor2', 'Coca-Cola', 5);\n\n-- Analise insert\nSELECT * FROM vendas.pedidos ;\n\n--Conceda acesso de leitura na tabela a cada um dos usuários.\nGRANT SELECT ON vendas.pedidos  TO gerente;  \nGRANT SELECT ON vendas.pedidos  TO vendedor1;  \nGRANT SELECT ON vendas.pedidos  TO vendedor2; \nGO\n/*\nCrie um novo esquema e uma função com valor de tabela embutida. \nA função retorna 1 quando uma linha na coluna vendedor é igual ao usuário que executa a \nconsulta ( @vendedor = USER_NAME()) ou se o usuário que executa a consulta é o usuário Gerente\n ( USER_NAME() = 'gerente').\n*/\nCREATE SCHEMA seguranca;  \nGO  \n  \nCREATE FUNCTION seguranca.tvf_segurancapredicada(@vendedor AS nvarchar(50))  \n    RETURNS TABLE  \nWITH SCHEMABINDING  \nAS  \n    RETURN SELECT 1 AS tvf_segurancapredicada_result\nWHERE @vendedor = USER_NAME() OR USER_NAME() = 'gerente';  \nGO\n\n/*\nCrie uma política de segurança adicionando a função como um predicado de filtro. \nO estado deve ser definido como ON para habilitar a política.\n*/\n\nCREATE SECURITY POLICY FiltroVendas\nADD FILTER PREDICATE seguranca.tvf_segurancapredicada(Vendedor)\nON vendas.pedidos\nWITH (STATE = ON);  \nGO\n\n--Permitir permissões SELECT para a função fn_securitypredicate\nGRANT SELECT ON seguranca.tvf_segurancapredicada TO gerente;  \nGRANT SELECT ON seguranca.tvf_segurancapredicada TO vendedor1;  \nGRANT SELECT ON seguranca.tvf_segurancapredicada TO vendedor2;\n\nAgora teste o predicado de filtragem, selecionando na tabela Sales como cada usuário.\nEXECUTE AS USER = 'vendedor1';  \nSELECT * FROM vendas.pedidos;\nREVERT;  \n  \nEXECUTE AS USER = 'vendedor2';  \nSELECT * FROM vendas.pedidos;\nREVERT;  \n  \nEXECUTE AS USER = 'gerente';  \nSELECT * FROM vendas.pedidos;\nREVERT;\n\n--Altere a política de segurança para desativá-la.\nALTER SECURITY POLICY FiltroVendas  \nWITH (STATE = OFF);\n\n--Conecte-se ao banco de dados SQL para limpar recursos\nDROP USER vendedor1;\nDROP USER vendedor2;\nDROP USER gerente;\n\nDROP SECURITY POLICY FiltroVendas;\nDROP TABLE vendas.pedidos;\nDROP FUNCTION seguranca.tvf_segurancapredicada;\nDROP SCHEMA seguranca;\nDROP SCHEMA vendas;\n",
 					"metadata": {
 						"language": "sql"
 					},
 					"currentConnection": {
-						"databaseName": "master",
-						"poolName": "Built-in"
+						"databaseName": "dw01",
+						"poolName": "dw01"
 					},
 					"resultLimit": 5000
 				},
@@ -2503,15 +2503,15 @@
 			"dependsOn": []
 		},
 		{
-			"name": "[concat(parameters('workspaceName'), '/03_CLS')]",
+			"name": "[concat(parameters('workspaceName'), '/02_CLS')]",
 			"type": "Microsoft.Synapse/workspaces/sqlscripts",
 			"apiVersion": "2019-06-01-preview",
 			"properties": {
 				"folder": {
-					"name": "99_Outros/03_FEATURES_DEDICADO"
+					"name": "03_FEATURES_DEDICADO"
 				},
 				"content": {
-					"query": "--https://docs.microsoft.com/pt-br/azure/synapse-analytics/sql-data-warehouse/column-level-security?toc=%2Fazure%2Fsynapse-analytics%2Ftoc.json",
+					"query": "/*\nref\nhttps://docs.microsoft.com/pt-br/azure/synapse-analytics/sql-data-warehouse/column-level-security?context=%2Fazure%2Fsynapse-analytics%2Fcontext%2Fcontext&view=sql-server-ver16\nSegurança a nivel de coluna\nSegurança de Nível de Coluna permite que os clientes controlem o acesso às colunas da tabela com \nbase no contexto de execução do usuário ou associação de grupo.\n*/\n\n--Crie a tabela Memboros com a coluna CPF usada para armazenar números de CADASTRO DE PESSOA FÍSICA.:\n\nCREATE TABLE membros\n  (membroID int IDENTITY,\n   Nome varchar(100) NULL,\n   CPF char(14) NOT NULL,\n   Sobrenome varchar(100) NOT NULL,\n   telefone varchar(12) NULL,\n   Email varchar(100) NULL);\n\n--Cria usuarios para teste\n--Crie três contas de usuário que demonstrarão diferentes recursos de acesso.\n\nCREATE USER gerente WITHOUT LOGIN;  \nCREATE USER estagiario WITHOUT LOGIN;  \n\n--Permita que estagiario acesse todas as colunas, exceto a coluna CPF, que tem os dados confidenciais:\n\nGRANT SELECT ON membros(membroID, Nome, Sobrenome, telefone, Email) TO estagiario;\n\n--Teste estagiario\nEXECUTE AS USER = 'estagiario';  \nSELECT * FROM membros;\nREVERT; \n\n--Teste estagiario\nEXECUTE AS USER = 'gerente';  \nSELECT * FROM membros;\nREVERT; ",
 					"metadata": {
 						"language": "sql"
 					},
@@ -2580,7 +2580,7 @@
 					"name": "01_SERVERLESS"
 				},
 				"content": {
-					"query": "-- cria login\ncreate login [bruno.galvincio@dataex.com.br] from external provider\nGO\n\n-- cria usuario\nuse lhdw\n\nCREATE user [bruno.galvincio@dataex.com.br] from login [bruno.galvincio@dataex.com.br]\nGO\n-- add role\nalter ROLE db_owner ADD MEMBER [bruno.galvincio@dataex.com.br]\n\n--adicionar contributor datalake",
+					"query": "-- cria login\ncreate login [bruno.galvincio@dataex.com.br] from external provider\nGO\n\n-- cria usuario\nuse lhdw\n\nCREATE user [bruno.galvincio@dataex.com.br] from login [bruno.galvincio@dataex.com.br]\nGO\n-- add role\nalter ROLE db_owner ADD MEMBER [bruno.galvincio@dataex.com.br]\n\n--adicionar contributor datalake\n\n\n",
 					"metadata": {
 						"language": "sql"
 					},
