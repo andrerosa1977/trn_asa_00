@@ -1,0 +1,133 @@
+{
+	"name": "UPDATE_CLIENTE",
+	"properties": {
+		"type": "MappingDataFlow",
+		"typeProperties": {
+			"sources": [
+				{
+					"dataset": {
+						"referenceName": "CLIENTE",
+						"type": "DatasetReference"
+					},
+					"name": "SILVERCLIENTE"
+				},
+				{
+					"dataset": {
+						"referenceName": "CLIENTEscd",
+						"type": "DatasetReference"
+					},
+					"name": "dimCLIENTESCD"
+				}
+			],
+			"sinks": [
+				{
+					"dataset": {
+						"referenceName": "CLIENTEscd",
+						"type": "DatasetReference"
+					},
+					"name": "sink1"
+				}
+			],
+			"transformations": [
+				{
+					"name": "createclientehash"
+				},
+				{
+					"name": "exists1"
+				},
+				{
+					"name": "lookup1"
+				},
+				{
+					"name": "SetDatas"
+				},
+				{
+					"name": "alterRow1"
+				}
+			],
+			"scriptLines": [
+				"source(output(",
+				"          ID_CLIENTE as integer,",
+				"          NOME_CLIENTE as string,",
+				"          ENDERECO as string,",
+				"          NUMERO as string,",
+				"          ID_CIDADE as integer,",
+				"          CEP as string",
+				"     ),",
+				"     allowSchemaDrift: true,",
+				"     validateSchema: false,",
+				"     isolationLevel: 'READ_UNCOMMITTED',",
+				"     format: 'table') ~> SILVERCLIENTE",
+				"source(output(",
+				"          ID_CLIENTE as integer,",
+				"          NOME_CLIENTE as string,",
+				"          ENDERECO as string,",
+				"          NUMERO as string,",
+				"          ID_CIDADE as integer,",
+				"          CEP as string,",
+				"          InsertedDate as timestamp,",
+				"          ModifiedDate as timestamp,",
+				"          HashKey as string",
+				"     ),",
+				"     allowSchemaDrift: true,",
+				"     validateSchema: false,",
+				"     isolationLevel: 'READ_UNCOMMITTED',",
+				"     format: 'table',",
+				"     staged: true) ~> dimCLIENTESCD",
+				"SILVERCLIENTE derive(HashKey = sha2(256,\r",
+				"iifNull(toString(ID_CLIENTE),'')+\r",
+				"iifNull(NOME_CLIENTE,'')+\r",
+				"iifNull(ENDERECO,'')+\r",
+				"iifNull(NUMERO,'')+\r",
+				"iifNull(toString(ID_CIDADE),'')+\r",
+				"iifNull(toString(CEP),'')\r",
+				")) ~> createclientehash",
+				"createclientehash, dimCLIENTESCD exists(createclientehash@HashKey == dimCLIENTESCD@HashKey,",
+				"     negate:true,",
+				"     broadcast: 'auto')~> exists1",
+				"exists1, dimCLIENTESCD lookup(SILVERCLIENTE@ID_CLIENTE == dimCLIENTESCD@ID_CLIENTE,",
+				"     multiple: false,",
+				"     pickup: 'any',",
+				"     broadcast: 'auto')~> lookup1",
+				"lookup1 derive(InsertedDate = iif(isNull(InsertedDate), currentTimestamp(), InsertedDate),",
+				"          ModifiedDate = currentTimestamp()) ~> SetDatas",
+				"SetDatas alterRow(upsertIf(true())) ~> alterRow1",
+				"alterRow1 sink(allowSchemaDrift: true,",
+				"     validateSchema: false,",
+				"     input(",
+				"          ID_CLIENTE as integer,",
+				"          NOME_CLIENTE as string,",
+				"          ENDERECO as string,",
+				"          NUMERO as string,",
+				"          ID_CIDADE as integer,",
+				"          CEP as string,",
+				"          InsertedDate as timestamp,",
+				"          ModifiedDate as timestamp,",
+				"          HashKey as string",
+				"     ),",
+				"     deletable:false,",
+				"     insertable:false,",
+				"     updateable:false,",
+				"     upsertable:true,",
+				"     keys:['ID_CLIENTE'],",
+				"     format: 'table',",
+				"     staged: true,",
+				"     allowCopyCommand: true,",
+				"     skipDuplicateMapInputs: true,",
+				"     skipDuplicateMapOutputs: true,",
+				"     errorHandlingOption: 'stopOnFirstError',",
+				"     mapColumn(",
+				"          ID_CLIENTE = SILVERCLIENTE@ID_CLIENTE,",
+				"          NOME_CLIENTE = SILVERCLIENTE@NOME_CLIENTE,",
+				"          ENDERECO = SILVERCLIENTE@ENDERECO,",
+				"          NUMERO = SILVERCLIENTE@NUMERO,",
+				"          ID_CIDADE = SILVERCLIENTE@ID_CIDADE,",
+				"          CEP = SILVERCLIENTE@CEP,",
+				"          InsertedDate,",
+				"          ModifiedDate,",
+				"          HashKey = createclientehash@HashKey",
+				"     )) ~> sink1"
+			]
+		}
+	}
+}
