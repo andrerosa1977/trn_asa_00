@@ -1,0 +1,20 @@
+{
+	"name": "99_ddm",
+	"properties": {
+		"folder": {
+			"name": "02_SQL_DEDICADO"
+		},
+		"content": {
+			"query": "IF NOT EXISTS (SELECT * FROM sys.objects O JOIN sys.schemas S ON O.schema_id = S.schema_id WHERE O.NAME = 'SILVER_CLIENTE_DDM' AND O.TYPE = 'U' AND S.NAME = 'dbo')\nCREATE TABLE dbo.SILVER_CLIENTE_DDM\n\t(\n\t [ID_CLIENTE] int,\n     [CPF] VARCHAR(14),\n     [EMAIL]VARCHAR(50),\n\t [NOME_CLIENTE] nvarchar(4000),\n\t [ENDERECO] nvarchar(4000),\n\t [NUMERO] nvarchar(4000),\n\t [ID_CIDADE] int,\n\t [CEP] nvarchar(4000)\n\t)\nWITH\n\t(\n\tDISTRIBUTION = ROUND_ROBIN,\n\t CLUSTERED COLUMNSTORE INDEX\n\t -- HEAP\n\t)\nGO\n\nselect * from dbo.SILVER_CLIENTE_DDM\n",
+			"metadata": {
+				"language": "sql"
+			},
+			"currentConnection": {
+				"databaseName": "dw01",
+				"poolName": "dw01"
+			},
+			"resultLimit": 5000
+		},
+		"type": "SqlQuery"
+	}
+}
