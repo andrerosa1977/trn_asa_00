@@ -11,7 +11,13 @@
 		"AzureSynapseAnalytics1_connectionString": {
 			"value": ""
 		},
+		"SqlServer1_connectionString": {
+			"value": ""
+		},
 		"asa-trn-99-WorkspaceDefaultSqlServer_connectionString": {
+			"value": ""
+		},
+		"AzureSynapseAnalytics2_connectionString": {
 			"value": ""
 		},
 		"asa-trn-99-WorkspaceDefaultStorage_properties_typeProperties_url": {

@@ -15,9 +15,17 @@
 			"type": "secureString",
 			"metadata": "Secure string for 'connectionString' of 'AzureSynapseAnalytics1'"
 		},
+		"SqlServer1_connectionString": {
+			"type": "secureString",
+			"metadata": "Secure string for 'connectionString' of 'SqlServer1'"
+		},
 		"asa-trn-99-WorkspaceDefaultSqlServer_connectionString": {
 			"type": "secureString",
 			"metadata": "Secure string for 'connectionString' of 'asa-trn-99-WorkspaceDefaultSqlServer'"
+		},
+		"AzureSynapseAnalytics2_connectionString": {
+			"type": "secureString",
+			"metadata": "Secure string for 'connectionString' of 'AzureSynapseAnalytics2'"
 		},
 		"asa-trn-99-WorkspaceDefaultStorage_properties_typeProperties_url": {
 			"type": "string",
@@ -511,6 +519,148 @@
 			]
 		},
 		{
+			"name": "[concat(parameters('workspaceName'), '/02_CDC')]",
+			"type": "Microsoft.Synapse/workspaces/pipelines",
+			"apiVersion": "2019-06-01-preview",
+			"properties": {
+				"activities": [
+					{
+						"name": "GetChangeCount",
+						"type": "Lookup",
+						"dependsOn": [],
+						"policy": {
+							"timeout": "7.00:00:00",
+							"retry": 0,
+							"retryIntervalInSeconds": 30,
+							"secureOutput": false,
+							"secureInput": false
+						},
+						"userProperties": [],
+						"typeProperties": {
+							"source": {
+								"type": "AzureSqlSource",
+								"sqlReaderQuery": {
+									"value": "@concat('DECLARE @begin_time datetime, @end_time datetime, @from_lsn binary(10), @to_lsn binary(10); \nSET @begin_time = ''',pipeline().parameters.triggerStartTime,''';\nSET @end_time = ''',pipeline().parameters.triggerEndTime,''';\nSET @from_lsn = sys.fn_cdc_map_time_to_lsn(''smallest greater than or equal'', @begin_time);\nSET @to_lsn = sys.fn_cdc_map_time_to_lsn(''largest less than'', @end_time);\nSELECT count(1) changecount FROM [cdc].[fn_cdc_get_net_changes_dbo_vendas](@from_lsn, @to_lsn, ''all'')')",
+									"type": "Expression"
+								},
+								"queryTimeout": "02:00:00",
+								"partitionOption": "None"
+							},
+							"dataset": {
+								"referenceName": "VENDAS",
+								"type": "DatasetReference",
+								"parameters": {}
+							}
+						}
+					},
+					{
+						"name": "HasChangedRows",
+						"type": "IfCondition",
+						"dependsOn": [
+							{
+								"activity": "GetChangeCount",
+								"dependencyConditions": [
+									"Succeeded"
+								]
+							}
+						],
+						"userProperties": [],
+						"typeProperties": {
+							"expression": {
+								"value": "@greater(int(activity('GetChangeCount').output.firstRow.changecount),0)",
+								"type": "Expression"
+							},
+							"ifTrueActivities": [
+								{
+									"name": "Copy Incremental Data_parquet",
+									"type": "Copy",
+									"dependsOn": [],
+									"policy": {
+										"timeout": "7.00:00:00",
+										"retry": 0,
+										"retryIntervalInSeconds": 30,
+										"secureOutput": false,
+										"secureInput": false
+									},
+									"userProperties": [],
+									"typeProperties": {
+										"source": {
+											"type": "AzureSqlSource",
+											"sqlReaderQuery": {
+												"value": "@concat('DECLARE @begin_time datetime, @end_time datetime, @from_lsn binary(10), @to_lsn binary(10); \nSET @begin_time = ''',pipeline().parameters.triggerStartTime,''';\nSET @end_time = ''',pipeline().parameters.triggerEndTime,''';\nSET @from_lsn = sys.fn_cdc_map_time_to_lsn(''smallest greater than or equal'', @begin_time);\nSET @to_lsn = sys.fn_cdc_map_time_to_lsn(''largest less than'', @end_time);\nSELECT * FROM cdc.fn_cdc_get_net_changes_dbo_vendas(@from_lsn, @to_lsn, ''all'')')",
+												"type": "Expression"
+											},
+											"queryTimeout": "02:00:00",
+											"partitionOption": "None"
+										},
+										"sink": {
+											"type": "ParquetSink",
+											"storeSettings": {
+												"type": "AzureBlobFSWriteSettings"
+											},
+											"formatSettings": {
+												"type": "ParquetWriteSettings"
+											}
+										},
+										"enableStaging": false,
+										"translator": {
+											"type": "TabularTranslator",
+											"typeConversion": true,
+											"typeConversionSettings": {
+												"allowDataTruncation": true,
+												"treatBooleanAsNumber": false
+											}
+										}
+									},
+									"inputs": [
+										{
+											"referenceName": "VENDAS",
+											"type": "DatasetReference",
+											"parameters": {}
+										}
+									],
+									"outputs": [
+										{
+											"referenceName": "vendas_cdc",
+											"type": "DatasetReference",
+											"parameters": {
+												"triggerStart": {
+													"value": "@pipeline().parameters.triggerStartTime",
+													"type": "Expression"
+												}
+											}
+										}
+									]
+								}
+							]
+						}
+					}
+				],
+				"policy": {
+					"elapsedTimeMetric": {},
+					"cancelAfter": {}
+				},
+				"parameters": {
+					"triggerStartTime": {
+						"type": "string",
+						"defaultValue": "2022-09-12 01:25:09.230"
+					},
+					"triggerEndTime": {
+						"type": "string",
+						"defaultValue": "2022-09-12 18:00:00.000"
+					}
+				},
+				"folder": {
+					"name": "MODELO"
+				},
+				"annotations": []
+			},
+			"dependsOn": [
+				"[concat(variables('workspaceId'), '/datasets/VENDAS')]",
+				"[concat(variables('workspaceId'), '/datasets/vendas_cdc')]"
+			]
+		},
+		{
 			"name": "[concat(parameters('workspaceName'), '/02_SPARK_CRM')]",
 			"type": "Microsoft.Synapse/workspaces/pipelines",
 			"apiVersion": "2019-06-01-preview",
@@ -599,6 +749,72 @@
 			},
 			"dependsOn": [
 				"[concat(variables('workspaceId'), '/dataflows/CARGA_CRM')]"
+			]
+		},
+		{
+			"name": "[concat(parameters('workspaceName'), '/04_ETL_IR')]",
+			"type": "Microsoft.Synapse/workspaces/pipelines",
+			"apiVersion": "2019-06-01-preview",
+			"properties": {
+				"activities": [
+					{
+						"name": "Copy data1",
+						"type": "Copy",
+						"dependsOn": [],
+						"policy": {
+							"timeout": "0.12:00:00",
+							"retry": 0,
+							"retryIntervalInSeconds": 30,
+							"secureOutput": false,
+							"secureInput": false
+						},
+						"userProperties": [],
+						"typeProperties": {
+							"source": {
+								"type": "SqlServerSource",
+								"queryTimeout": "02:00:00",
+								"partitionOption": "None"
+							},
+							"sink": {
+								"type": "SqlPoolSink",
+								"allowCopyCommand": true,
+								"copyCommandSettings": {}
+							},
+							"enableStaging": true,
+							"stagingSettings": {
+								"linkedServiceName": {
+									"referenceName": "asa-trn-99-WorkspaceDefaultStorage",
+									"type": "LinkedServiceReference"
+								},
+								"path": "treinamento/staging"
+							}
+						},
+						"inputs": [
+							{
+								"referenceName": "IR_CATEGORIA",
+								"type": "DatasetReference",
+								"parameters": {}
+							}
+						],
+						"outputs": [
+							{
+								"referenceName": "TBL_Categoria",
+								"type": "DatasetReference",
+								"parameters": {}
+							}
+						]
+					}
+				],
+				"policy": {
+					"elapsedTimeMetric": {},
+					"cancelAfter": {}
+				},
+				"annotations": []
+			},
+			"dependsOn": [
+				"[concat(variables('workspaceId'), '/datasets/IR_CATEGORIA')]",
+				"[concat(variables('workspaceId'), '/datasets/TBL_Categoria')]",
+				"[concat(variables('workspaceId'), '/linkedServices/asa-trn-99-WorkspaceDefaultStorage')]"
 			]
 		},
 		{
@@ -888,6 +1104,53 @@
 			},
 			"dependsOn": [
 				"[concat(variables('workspaceId'), '/linkedServices/asa-trn-99-WorkspaceDefaultStorage')]"
+			]
+		},
+		{
+			"name": "[concat(parameters('workspaceName'), '/IR_CATEGORIA')]",
+			"type": "Microsoft.Synapse/workspaces/datasets",
+			"apiVersion": "2019-06-01-preview",
+			"properties": {
+				"linkedServiceName": {
+					"referenceName": "SqlServer1",
+					"type": "LinkedServiceReference"
+				},
+				"annotations": [],
+				"type": "SqlServerTable",
+				"schema": [
+					{
+						"name": "NUM_VENDA",
+						"type": "int",
+						"precision": 10
+					},
+					{
+						"name": "DATA_VENDA",
+						"type": "datetime",
+						"precision": 23,
+						"scale": 3
+					},
+					{
+						"name": "ID_CLIENTE",
+						"type": "int",
+						"precision": 10
+					},
+					{
+						"name": "ID_VENDEDOR",
+						"type": "int",
+						"precision": 10
+					},
+					{
+						"name": "STATUS",
+						"type": "char"
+					}
+				],
+				"typeProperties": {
+					"schema": "dbo",
+					"table": "VENDAS"
+				}
+			},
+			"dependsOn": [
+				"[concat(variables('workspaceId'), '/linkedServices/SqlServer1')]"
 			]
 		},
 		{
@@ -1218,6 +1481,37 @@
 			]
 		},
 		{
+			"name": "[concat(parameters('workspaceName'), '/TBL_Categoria')]",
+			"type": "Microsoft.Synapse/workspaces/datasets",
+			"apiVersion": "2019-06-01-preview",
+			"properties": {
+				"annotations": [],
+				"type": "SqlPoolTable",
+				"schema": [
+					{
+						"name": "ID_CATEGORIA",
+						"type": "int",
+						"precision": 10
+					},
+					{
+						"name": "NOME_CATEGORIA",
+						"type": "nvarchar"
+					}
+				],
+				"typeProperties": {
+					"schema": "SILVER",
+					"table": "D_BULK_CATEGORIA"
+				},
+				"sqlPool": {
+					"referenceName": "dw01",
+					"type": "SqlPoolReference"
+				}
+			},
+			"dependsOn": [
+				"[concat(variables('workspaceId'), '/sqlPools/dw01')]"
+			]
+		},
+		{
 			"name": "[concat(parameters('workspaceName'), '/UNIDADE')]",
 			"type": "Microsoft.Synapse/workspaces/datasets",
 			"apiVersion": "2019-06-01-preview",
@@ -1456,6 +1750,43 @@
 			]
 		},
 		{
+			"name": "[concat(parameters('workspaceName'), '/vendas_cdc')]",
+			"type": "Microsoft.Synapse/workspaces/datasets",
+			"apiVersion": "2019-06-01-preview",
+			"properties": {
+				"linkedServiceName": {
+					"referenceName": "asa-trn-99-WorkspaceDefaultStorage",
+					"type": "LinkedServiceReference"
+				},
+				"parameters": {
+					"triggerStart": {
+						"type": "string"
+					}
+				},
+				"annotations": [],
+				"type": "Parquet",
+				"typeProperties": {
+					"location": {
+						"type": "AzureBlobFSLocation",
+						"fileName": {
+							"value": "@concat(formatDateTime(dataset().triggerStart,'yyyyMMddHHmmssfff'),'.parquet')",
+							"type": "Expression"
+						},
+						"folderPath": {
+							"value": "@concat('minierp/vendas/incremental/parquet/',formatDateTime(dataset().triggerStart,'yyyy/MM/dd'))",
+							"type": "Expression"
+						},
+						"fileSystem": "bronze"
+					},
+					"compressionCodec": "snappy"
+				},
+				"schema": []
+			},
+			"dependsOn": [
+				"[concat(variables('workspaceId'), '/linkedServices/asa-trn-99-WorkspaceDefaultStorage')]"
+			]
+		},
+		{
 			"name": "[concat(parameters('workspaceName'), '/AzureOLTP')]",
 			"type": "Microsoft.Synapse/workspaces/linkedServices",
 			"apiVersion": "2019-06-01-preview",
@@ -1491,6 +1822,25 @@
 			},
 			"dependsOn": [
 				"[concat(variables('workspaceId'), '/integrationRuntimes/AutoResolveIntegrationRuntime')]"
+			]
+		},
+		{
+			"name": "[concat(parameters('workspaceName'), '/SqlServer1')]",
+			"type": "Microsoft.Synapse/workspaces/linkedServices",
+			"apiVersion": "2019-06-01-preview",
+			"properties": {
+				"annotations": [],
+				"type": "SqlServer",
+				"typeProperties": {
+					"connectionString": "[parameters('SqlServer1_connectionString')]"
+				},
+				"connectVia": {
+					"referenceName": "SRV-ANDRE-99",
+					"type": "IntegrationRuntimeReference"
+				}
+			},
+			"dependsOn": [
+				"[concat(variables('workspaceId'), '/integrationRuntimes/SRV-ANDRE-99')]"
 			]
 		},
 		{
@@ -1572,6 +1922,16 @@
 						}
 					}
 				}
+			},
+			"dependsOn": []
+		},
+		{
+			"name": "[concat(parameters('workspaceName'), '/SRV-ANDRE-99')]",
+			"type": "Microsoft.Synapse/workspaces/integrationRuntimes",
+			"apiVersion": "2019-06-01-preview",
+			"properties": {
+				"type": "SelfHosted",
+				"typeProperties": {}
 			},
 			"dependsOn": []
 		},
@@ -1736,13 +2096,59 @@
 					"name": "01_SERVERLESS"
 				},
 				"content": {
-					"query": "CREATE SCHEMA BRONZE\nGO\nCREATE SCHEMA SILVER\nGO\nCREATE SCHEMA GOLD\n",
+					"query": "-- CRIAR SCHEMAS CAMADAS MEDALLION\nCREATE SCHEMA BRONZE\nGO\nCREATE SCHEMA SILVER\nGO\nCREATE SCHEMA GOLD\nGO\n",
 					"metadata": {
 						"language": "sql"
 					},
 					"currentConnection": {
 						"databaseName": "lhdw",
 						"poolName": "Built-in"
+					},
+					"resultLimit": 5000
+				},
+				"type": "SqlQuery"
+			},
+			"dependsOn": []
+		},
+		{
+			"name": "[concat(parameters('workspaceName'), '/01_CRIA_DW')]",
+			"type": "Microsoft.Synapse/workspaces/sqlscripts",
+			"apiVersion": "2019-06-01-preview",
+			"properties": {
+				"folder": {
+					"name": "02_SQL_DEDICADO"
+				},
+				"content": {
+					"query": "--CRIADO PELO MANAGE SQL POOLS",
+					"metadata": {
+						"language": "sql"
+					},
+					"currentConnection": {
+						"databaseName": "dw01",
+						"poolName": "dw01"
+					},
+					"resultLimit": 5000
+				},
+				"type": "SqlQuery"
+			},
+			"dependsOn": []
+		},
+		{
+			"name": "[concat(parameters('workspaceName'), '/02 SCHEMA DEDICADO')]",
+			"type": "Microsoft.Synapse/workspaces/sqlscripts",
+			"apiVersion": "2019-06-01-preview",
+			"properties": {
+				"folder": {
+					"name": "02_SQL_DEDICADO"
+				},
+				"content": {
+					"query": "CREATE SCHEMA BRONZE\nGO\nCREATE SCHEMA SILVER\nGO\nCREATE SCHEMA GOLD",
+					"metadata": {
+						"language": "sql"
+					},
+					"currentConnection": {
+						"databaseName": "dw01",
+						"poolName": "dw01"
 					},
 					"resultLimit": 5000
 				},
@@ -1774,7 +2180,7 @@
 			"dependsOn": []
 		},
 		{
-			"name": "[concat(parameters('workspaceName'), '/03_CRIA_FONTE_EXTERNA')]",
+			"name": "[concat(parameters('workspaceName'), '/03_CRIAR_CREDENCIAL')]",
 			"type": "Microsoft.Synapse/workspaces/sqlscripts",
 			"apiVersion": "2019-06-01-preview",
 			"properties": {
@@ -1782,13 +2188,36 @@
 					"name": "01_SERVERLESS"
 				},
 				"content": {
-					"query": "IF NOT EXISTS (SELECT * FROM sys.external_data_sources \nWHERE name = 'treinamento_adlstrnsolar99_dfs_core_windows_net') \n\tCREATE EXTERNAL DATA SOURCE [treinamento_adlstrnsolar99_dfs_core_windows_net] \n\tWITH (\n\t\tLOCATION = 'abfss://treinamento@adlstrnsolar99.dfs.core.windows.net' \n\t)\nGO\n\n--REFERENCIAS\n--https://docs.microsoft.com/pt-br/sql/t-sql/statements/create-external-data-source-transact-sql?view=sql-server-ver16&tabs=dedicated\n",
+					"query": "-- Create master key in databases with some password (one-off per database)\nUSE LHDW;\nCREATE MASTER KEY ENCRYPTION BY PASSWORD = 'TREINAMENTOSOLAR2022@!'\nGO\n\n--CRIAÇÃO DE CREDENTIAL\n--Entrar no datalake e gerar chave SAS\nUSE LHDW;\nCREATE DATABASE SCOPED CREDENTIAL SASADLSTRNSOLAR\n WITH IDENTITY = 'SHARED ACCESS SIGNATURE',\n--GERADO SECRET VIA SAS\n SECRET = '?sv=2021-06-08&ss=bf&srt=sc&sp=rwdlacyx&se=2022-11-02T01:12:12Z&st=2022-09-12T17:12:12Z&spr=https&sig=2hgFfD4fo8kcmkztQ6l7t413%2BHZkR%2BTJLm68wuJH4C4%3D'\n GO\n",
 					"metadata": {
 						"language": "sql"
 					},
 					"currentConnection": {
 						"databaseName": "lhdw",
 						"poolName": "Built-in"
+					},
+					"resultLimit": 5000
+				},
+				"type": "SqlQuery"
+			},
+			"dependsOn": []
+		},
+		{
+			"name": "[concat(parameters('workspaceName'), '/03_CRIA_USER')]",
+			"type": "Microsoft.Synapse/workspaces/sqlscripts",
+			"apiVersion": "2019-06-01-preview",
+			"properties": {
+				"folder": {
+					"name": "02_SQL_DEDICADO"
+				},
+				"content": {
+					"query": "-- cria login\ncreate login [bruno.galvincio@dataex.com.br] from external provider\nGO\n\n-- cria usuario\nuse DW01\n\nCREATE user [bruno.galvincio@dataex.com.br] from login [bruno.galvincio@dataex.com.br]\nGO\n-- add role\nalter ROLE db_owner ADD MEMBER [bruno.galvincio@dataex.com.br]\n\n--adicionar contributor datalake",
+					"metadata": {
+						"language": "sql"
+					},
+					"currentConnection": {
+						"databaseName": "dw01",
+						"poolName": "dw01"
 					},
 					"resultLimit": 5000
 				},
@@ -1805,7 +2234,7 @@
 					"name": "01_SERVERLESS"
 				},
 				"content": {
-					"query": "-- cria login\ncreate login [bruno.galvincio@dataex.com.br] from external provider\nGO\n\n-- cria usuario\nuse lhdw\n\nCREATE user [bruno.galvincio@dataex.com.br] from login [bruno.galvincio@dataex.com.br]\nGO\n-- add role\nalter ROLE db_owner ADD MEMBER [bruno.galvincio@dataex.com.br]\n\n--adcionar contributor datalake",
+					"query": "-- cria login\ncreate login [bruno.galvincio@dataex.com.br] from external provider\nGO\n\n-- cria usuario\nuse lhdw\n\nCREATE user [bruno.galvincio@dataex.com.br] from login [bruno.galvincio@dataex.com.br]\nGO\n-- add role\nalter ROLE db_owner ADD MEMBER [bruno.galvincio@dataex.com.br]\n\n--adicionar contributor datalake",
 					"metadata": {
 						"language": "sql"
 					},
@@ -1820,7 +2249,53 @@
 			"dependsOn": []
 		},
 		{
-			"name": "[concat(parameters('workspaceName'), '/05_CRIA_TABELA_EXTERNA_CATEGORIA')]",
+			"name": "[concat(parameters('workspaceName'), '/04_CRIA_FORMATO')]",
+			"type": "Microsoft.Synapse/workspaces/sqlscripts",
+			"apiVersion": "2019-06-01-preview",
+			"properties": {
+				"folder": {
+					"name": "02_SQL_DEDICADO"
+				},
+				"content": {
+					"query": "IF NOT EXISTS (SELECT * FROM sys.external_file_formats WHERE name = 'ParquetFormat') \n\tCREATE EXTERNAL FILE FORMAT [ParquetFormat] \n\tWITH ( FORMAT_TYPE = PARQUET)\nGO\n\n",
+					"metadata": {
+						"language": "sql"
+					},
+					"currentConnection": {
+						"databaseName": "master",
+						"poolName": "Built-in"
+					},
+					"resultLimit": 5000
+				},
+				"type": "SqlQuery"
+			},
+			"dependsOn": []
+		},
+		{
+			"name": "[concat(parameters('workspaceName'), '/05_CRIA_EXT_DS')]",
+			"type": "Microsoft.Synapse/workspaces/sqlscripts",
+			"apiVersion": "2019-06-01-preview",
+			"properties": {
+				"folder": {
+					"name": "02_SQL_DEDICADO"
+				},
+				"content": {
+					"query": "IF NOT EXISTS (SELECT * FROM sys.external_data_sources WHERE name = 'treinamento_adlstrnsolar99_dfs_core_windows_net') \n\tCREATE EXTERNAL DATA SOURCE [treinamento_adlstrnsolar99_dfs_core_windows_net] \n\tWITH (\n\t\tLOCATION = 'abfss://treinamento@adlstrnsolar99.dfs.core.windows.net' \n\t)\nGO",
+					"metadata": {
+						"language": "sql"
+					},
+					"currentConnection": {
+						"databaseName": "master",
+						"poolName": "Built-in"
+					},
+					"resultLimit": 5000
+				},
+				"type": "SqlQuery"
+			},
+			"dependsOn": []
+		},
+		{
+			"name": "[concat(parameters('workspaceName'), '/05_CRIA_FONTE_EXTERNA')]",
 			"type": "Microsoft.Synapse/workspaces/sqlscripts",
 			"apiVersion": "2019-06-01-preview",
 			"properties": {
@@ -1828,7 +2303,7 @@
 					"name": "01_SERVERLESS"
 				},
 				"content": {
-					"query": "\n--DROP EXTERNAL TABLE SILVER.D_CATEGORIA\nCREATE EXTERNAL TABLE SILVER.D_CATEGORIA (\n\t[ID_CATEGORIA] int,\n\t[NOME_CATEGORIA] nvarchar(4000)\n\t)\n\tWITH (\n\tLOCATION = 'bronze/categoria/dbo.CATEGORIA.parquet',\n\tDATA_SOURCE = [treinamento_adlstrnsolar99_dfs_core_windows_net],\n\tFILE_FORMAT = [ParquetFormat]\n\t)\nGO\n\n\n-- SELECT * FROM SILVER.D_CATEGORIA",
+					"query": "\n\n-- PARA USERS INTERNOS -<\nIF NOT EXISTS (SELECT * FROM sys.external_data_sources \nWHERE name = 'treinamento_adlstrnsolar99_dfs_core_windows_net') \n\tCREATE EXTERNAL DATA SOURCE [treinamento_adlstrnsolar99_dfs_core_windows_net] \n\tWITH (\n\t\tLOCATION = 'abfss://treinamento@adlstrnsolar99.dfs.core.windows.net' \n\t)\nGO\n\n\n--PARA USER EXTERNOS ->\n--Entrar no datalake e gerar chave SAS\nIF NOT EXISTS (SELECT * FROM sys.external_data_sources \nWHERE name = 'treinamento_adlstrnsolar99_dfs_core_windows_net_ext') \n\tCREATE EXTERNAL DATA SOURCE [treinamento_adlstrnsolar99_dfs_core_windows_net_ext] \n\tWITH (\n\t\tLOCATION = 'abfss://treinamento@adlstrnsolar99.dfs.core.windows.net',\n\t\tCREDENTIAL=[SASADLSTRNSOLAR]\n\t)\nGO\n\n\n",
 					"metadata": {
 						"language": "sql"
 					},
@@ -1843,7 +2318,7 @@
 			"dependsOn": []
 		},
 		{
-			"name": "[concat(parameters('workspaceName'), '/06_CRIA_TABELA_EXTERNA_CIDADES')]",
+			"name": "[concat(parameters('workspaceName'), '/06_CRIA_TABELA_EXTERNA_CATEGORIA')]",
 			"type": "Microsoft.Synapse/workspaces/sqlscripts",
 			"apiVersion": "2019-06-01-preview",
 			"properties": {
@@ -1851,7 +2326,7 @@
 					"name": "01_SERVERLESS"
 				},
 				"content": {
-					"query": "\n-- IF NOT EXISTS (SELECT * FROM sys.external_file_formats WHERE name = 'SynapseParquetFormat') \n-- \tCREATE EXTERNAL FILE FORMAT [SynapseParquetFormat] \n-- \tWITH ( FORMAT_TYPE = PARQUET)\n-- GO\n\n-- IF NOT EXISTS (SELECT * FROM sys.external_data_sources WHERE name = 'treinamento_adlstrnsolar99_dfs_core_windows_net') \n-- \tCREATE EXTERNAL DATA SOURCE [treinamento_adlstrnsolar99_dfs_core_windows_net] \n-- \tWITH (\n-- \t\tLOCATION = 'abfss://treinamento@adlstrnsolar99.dfs.core.windows.net' \n-- \t)\n-- GO\n\n\nCREATE EXTERNAL TABLE SILVER.D_CIDADE (\n\t[ID_CIDADE] int,\n\t[NOME_CIDADE] nvarchar(4000),\n\t[UF] nvarchar(4000)\n\t)\n\tWITH (\n\tLOCATION = 'bronze/cidade/dbo.CIDADE.parquet',\n\tDATA_SOURCE = [treinamento_adlstrnsolar99_dfs_core_windows_net],\n\tFILE_FORMAT = [ParquetFormat]\n\t)\nGO\n",
+					"query": "\n--DROP EXTERNAL TABLE SILVER.D_CATEGORIA\nCREATE EXTERNAL TABLE SILVER.D_CATEGORIA (\n\t[ID_CATEGORIA] int,\n\t[NOME_CATEGORIA] nvarchar(4000)\n\t)\n\tWITH (\n\tLOCATION = 'silver/categoria/*.parquet',\n\tDATA_SOURCE = [treinamento_adlstrnsolar99_dfs_core_windows_net],\n\tFILE_FORMAT = [ParquetFormat]\n\t)\nGO\n\n--select * from SILVER.D_CATEGORIA\n\n-- SELECT * FROM SILVER.D_CATEGORIA\n\n",
 					"metadata": {
 						"language": "sql"
 					},
@@ -1866,7 +2341,53 @@
 			"dependsOn": []
 		},
 		{
-			"name": "[concat(parameters('workspaceName'), '/07_CRIA_EXTERNAL_TABLE_CLIENTE')]",
+			"name": "[concat(parameters('workspaceName'), '/06_EXTERNA_DEDICADA_CATEGORIA')]",
+			"type": "Microsoft.Synapse/workspaces/sqlscripts",
+			"apiVersion": "2019-06-01-preview",
+			"properties": {
+				"folder": {
+					"name": "02_SQL_DEDICADO"
+				},
+				"content": {
+					"query": "CREATE EXTERNAL TABLE SILVER.[D_EXT_CATEGORIA1]\n(\n\t[ID_CATEGORIA] [int]  NOT NULL,\n\t[NOME_CATEGORIA] [varchar](20) NOT NULL\n)\nWITH\n(\n\tLOCATION = '/silver/categoria',\n\tDATA_SOURCE = [treinamento_adlstrnsolar99_dfs_core_windows_net],\n\tFILE_FORMAT = [ParquetFormat]\n)\n",
+					"metadata": {
+						"language": "sql"
+					},
+					"currentConnection": {
+						"databaseName": "dw01",
+						"poolName": "dw01"
+					},
+					"resultLimit": 5000
+				},
+				"type": "SqlQuery"
+			},
+			"dependsOn": []
+		},
+		{
+			"name": "[concat(parameters('workspaceName'), '/07_CRIA_TABELA_D_CATEGORIA')]",
+			"type": "Microsoft.Synapse/workspaces/sqlscripts",
+			"apiVersion": "2019-06-01-preview",
+			"properties": {
+				"folder": {
+					"name": "02_SQL_DEDICADO"
+				},
+				"content": {
+					"query": "IF NOT EXISTS (SELECT * FROM sys.objects O JOIN sys.schemas S ON O.schema_id = S.schema_id WHERE O.NAME = 'D_BULK_CATEGORIA' AND O.TYPE = 'U' AND S.NAME = 'SILVER')\nCREATE TABLE SILVER.D_BULK_CATEGORIA\n\t(\n\t [ID_CATEGORIA] int,\n\t [NOME_CATEGORIA] nvarchar(4000)\n\t)\nWITH\n\t(\n\tDISTRIBUTION = ROUND_ROBIN,\n\t CLUSTERED COLUMNSTORE INDEX\n\t -- HEAP\n\t)\nGO\n\n--Uncomment the 4 lines below to create a stored procedure for data pipeline orchestration​\n--CREATE PROC bulk_load_D_BULK_CATEGORIA\n--AS\n--BEGIN\n\nCOPY INTO SILVER.D_BULK_CATEGORIA\n(ID_CATEGORIA 1, NOME_CATEGORIA 2)\nFROM 'https://adlstrnsolar99.dfs.core.windows.net/treinamento/silver/categoria'\nWITH\n(\n\tFILE_TYPE = 'PARQUET'\n\t,MAXERRORS = 0\n)\n--END\nGO\n\nSELECT TOP 100 * FROM SILVER.D_BULK_CATEGORIA\nGO\n",
+					"metadata": {
+						"language": "sql"
+					},
+					"currentConnection": {
+						"databaseName": "dw01",
+						"poolName": "dw01"
+					},
+					"resultLimit": 5000
+				},
+				"type": "SqlQuery"
+			},
+			"dependsOn": []
+		},
+		{
+			"name": "[concat(parameters('workspaceName'), '/07_CRIA_TABELA_EXTERNA_CIDADES')]",
 			"type": "Microsoft.Synapse/workspaces/sqlscripts",
 			"apiVersion": "2019-06-01-preview",
 			"properties": {
@@ -1874,7 +2395,7 @@
 					"name": "01_SERVERLESS"
 				},
 				"content": {
-					"query": "\nCREATE EXTERNAL TABLE SILVER.D_CLIENTE (\n\t[ID_CLIENTE] int,\n\t[NOME_CLIENTE] nvarchar(4000),\n\t[ENDERECO] nvarchar(4000),\n\t[NUMERO] nvarchar(4000),\n\t[ID_CIDADE] int,\n\t[CEP] nvarchar(4000)\n\t)\n\tWITH (\n\tLOCATION = 'bronze/cliente/**',\n\tDATA_SOURCE = [treinamento_adlstrnsolar99_dfs_core_windows_net],\n\tFILE_FORMAT = [ParquetFormat]\n\t)\nGO\n\n",
+					"query": "\n-- IF NOT EXISTS (SELECT * FROM sys.external_file_formats WHERE name = 'SynapseParquetFormat') \n-- \tCREATE EXTERNAL FILE FORMAT [SynapseParquetFormat] \n-- \tWITH ( FORMAT_TYPE = PARQUET)\n-- GO\n\n-- IF NOT EXISTS (SELECT * FROM sys.external_data_sources WHERE name = 'treinamento_adlstrnsolar99_dfs_core_windows_net') \n-- \tCREATE EXTERNAL DATA SOURCE [treinamento_adlstrnsolar99_dfs_core_windows_net] \n-- \tWITH (\n-- \t\tLOCATION = 'abfss://treinamento@adlstrnsolar99.dfs.core.windows.net' \n-- \t)\n-- GO\n\n-- DROP EXTERNAL TABLE SILVER.D_CIDADE\nCREATE EXTERNAL TABLE SILVER.D_CIDADE (\n\t[ID_CIDADE] int,\n\t[NOME_CIDADE] nvarchar(4000),\n\t[UF] nvarchar(4000)\n\t)\n\tWITH (\n\tLOCATION = 'silver/cidade/*.parquet',\n\tDATA_SOURCE = [treinamento_adlstrnsolar99_dfs_core_windows_net],\n\tFILE_FORMAT = [ParquetFormat]\n\t)\nGO\n\n--SELECT * FROM SILVER.D_CIDADE",
 					"metadata": {
 						"language": "sql"
 					},
@@ -1889,7 +2410,7 @@
 			"dependsOn": []
 		},
 		{
-			"name": "[concat(parameters('workspaceName'), '/08_CRIA_EXTERNAL_TABLE_PRODUTOS')]",
+			"name": "[concat(parameters('workspaceName'), '/08_CRIA_EXTERNAL_TABLE_CLIENTE')]",
 			"type": "Microsoft.Synapse/workspaces/sqlscripts",
 			"apiVersion": "2019-06-01-preview",
 			"properties": {
@@ -1897,7 +2418,7 @@
 					"name": "01_SERVERLESS"
 				},
 				"content": {
-					"query": "\nCREATE EXTERNAL TABLE SILVER.D_PRODUTOS (\n\t[ID_PROD] int,\n\t[NOME_PRODUTO] nvarchar(4000),\n\t[ID_CATEGORIA] int,\n\t[ID_UNIDADE] nvarchar(4000),\n\t[PRECO] numeric(10,2)\n\t)\n\tWITH (\n\tLOCATION = 'bronze/produtos/**',\n\tDATA_SOURCE = [treinamento_adlstrnsolar99_dfs_core_windows_net],\n\tFILE_FORMAT = [ParquetFormat]\n\t)\nGO\n",
+					"query": "--DROP EXTERNAL TABLE SILVER.D_CLIENTE\nCREATE EXTERNAL TABLE SILVER.D_CLIENTE (\n\t[ID_CLIENTE] int,\n\t[NOME_CLIENTE] nvarchar(4000),\n\t[ENDERECO] nvarchar(4000),\n\t[NUMERO] nvarchar(4000),\n\t[ID_CIDADE] int,\n\t[CEP] nvarchar(4000)\n\t)\n\tWITH (\n\tLOCATION = 'silver/cliente/**',\n\tDATA_SOURCE = [treinamento_adlstrnsolar99_dfs_core_windows_net],\n\tFILE_FORMAT = [ParquetFormat]\n\t)\nGO\n\n--SELECT * FROM  SILVER.D_CLIENTE\n",
 					"metadata": {
 						"language": "sql"
 					},
@@ -1912,7 +2433,30 @@
 			"dependsOn": []
 		},
 		{
-			"name": "[concat(parameters('workspaceName'), '/09_CRIA_TABELA_EXTERNA_UNIDADE')]",
+			"name": "[concat(parameters('workspaceName'), '/08_CRIA_TABELA_D_CIDADE')]",
+			"type": "Microsoft.Synapse/workspaces/sqlscripts",
+			"apiVersion": "2019-06-01-preview",
+			"properties": {
+				"folder": {
+					"name": "02_SQL_DEDICADO"
+				},
+				"content": {
+					"query": "IF NOT EXISTS (SELECT * FROM sys.objects O JOIN sys.schemas S ON O.schema_id = S.schema_id WHERE O.NAME = 'D_CIDADE' AND O.TYPE = 'U' AND S.NAME = 'SILVER')\nCREATE TABLE SILVER.D_CIDADE\n\t(\n\t [ID_CIDADE] int,\n\t [NOME_CIDADE] nvarchar(4000),\n\t [UF] nvarchar(4000)\n\t)\nWITH\n\t(\n\tDISTRIBUTION = ROUND_ROBIN,\n\t CLUSTERED COLUMNSTORE INDEX\n\t -- HEAP\n\t)\nGO\n\n--Uncomment the 4 lines below to create a stored procedure for data pipeline orchestration​\n--CREATE PROC bulk_load_D_CIDADE\n--AS\n--BEGIN\nCOPY INTO SILVER.D_CIDADE\n(ID_CIDADE 1, NOME_CIDADE 2, UF 3)\nFROM 'https://adlstrnsolar99.dfs.core.windows.net/treinamento/silver/cidade'\nWITH\n(\n\tFILE_TYPE = 'PARQUET'\n\t,MAXERRORS = 0\n\t,COMPRESSION = 'snappy'\n)\n--END\nGO\n\nSELECT TOP 100 * FROM SILVER.D_CIDADE\nGO",
+					"metadata": {
+						"language": "sql"
+					},
+					"currentConnection": {
+						"databaseName": "dw01",
+						"poolName": "dw01"
+					},
+					"resultLimit": 5000
+				},
+				"type": "SqlQuery"
+			},
+			"dependsOn": []
+		},
+		{
+			"name": "[concat(parameters('workspaceName'), '/09_CRIA_EXTERNAL_TABLE_PRODUTOS')]",
 			"type": "Microsoft.Synapse/workspaces/sqlscripts",
 			"apiVersion": "2019-06-01-preview",
 			"properties": {
@@ -1920,7 +2464,7 @@
 					"name": "01_SERVERLESS"
 				},
 				"content": {
-					"query": "\nCREATE EXTERNAL TABLE SILVER.D_UNIDADE (\n\t[ID_UNIDADE] nvarchar(4000),\n\t[DESC_UNIDADE] nvarchar(4000)\n\t)\n\tWITH (\n\tLOCATION = 'bronze/unidade/**',\n\tDATA_SOURCE = [treinamento_adlstrnsolar99_dfs_core_windows_net],\n\tFILE_FORMAT = [ParquetFormat]\n\t)\nGO\n",
+					"query": "--drop EXTERNAL TABLE SILVER.D_PRODUTOS\nCREATE EXTERNAL TABLE SILVER.D_PRODUTOS (\n\t[ID_PROD] int,\n\t[NOME_PRODUTO] nvarchar(4000),\n\t[ID_CATEGORIA] int,\n\t[ID_UNIDADE] nvarchar(4000),\n\t[PRECO] numeric(10,2)\n\t)\n\tWITH (\n\tLOCATION = 'silver/produtos/**',\n\tDATA_SOURCE = [treinamento_adlstrnsolar99_dfs_core_windows_net],\n\tFILE_FORMAT = [ParquetFormat]\n\t)\nGO\n\n--select * from SILVER.D_PRODUTOS",
 					"metadata": {
 						"language": "sql"
 					},
@@ -1935,7 +2479,53 @@
 			"dependsOn": []
 		},
 		{
-			"name": "[concat(parameters('workspaceName'), '/10_CRIA_TABELA_EXTERNA_VENDEDORES')]",
+			"name": "[concat(parameters('workspaceName'), '/09_CRIA_TABELA_D_CLIENTE')]",
+			"type": "Microsoft.Synapse/workspaces/sqlscripts",
+			"apiVersion": "2019-06-01-preview",
+			"properties": {
+				"folder": {
+					"name": "02_SQL_DEDICADO"
+				},
+				"content": {
+					"query": "IF NOT EXISTS (SELECT * FROM sys.objects O JOIN sys.schemas S ON O.schema_id = S.schema_id WHERE O.NAME = 'SILVER_CLIENTE' AND O.TYPE = 'U' AND S.NAME = 'dbo')\nCREATE TABLE dbo.SILVER_CLIENTE\n\t(\n\t [ID_CLIENTE] int,\n\t [NOME_CLIENTE] nvarchar(4000),\n\t [ENDERECO] nvarchar(4000),\n\t [NUMERO] nvarchar(4000),\n\t [ID_CIDADE] int,\n\t [CEP] nvarchar(4000)\n\t)\nWITH\n\t(\n\tDISTRIBUTION = ROUND_ROBIN,\n\t CLUSTERED COLUMNSTORE INDEX\n\t -- HEAP\n\t)\nGO\n\n--Uncomment the 4 lines below to create a stored procedure for data pipeline orchestration​\n--CREATE PROC bulk_load_SILVER_CLIENTE\n--AS\n--BEGIN\nCOPY INTO dbo.SILVER_CLIENTE\n(ID_CLIENTE 1, NOME_CLIENTE 2, ENDERECO 3, NUMERO 4, ID_CIDADE 5, CEP 6)\nFROM 'https://adlstrnsolar99.dfs.core.windows.net/treinamento/silver/cliente'\nWITH\n(\n\tFILE_TYPE = 'PARQUET'\n\t,MAXERRORS = 0\n)\n--END\nGO\n\nSELECT TOP 100 * FROM dbo.SILVER_CLIENTE\nGO",
+					"metadata": {
+						"language": "sql"
+					},
+					"currentConnection": {
+						"databaseName": "dw01",
+						"poolName": "dw01"
+					},
+					"resultLimit": 5000
+				},
+				"type": "SqlQuery"
+			},
+			"dependsOn": []
+		},
+		{
+			"name": "[concat(parameters('workspaceName'), '/10_CRIA_TABELA_D_PRODUTOS')]",
+			"type": "Microsoft.Synapse/workspaces/sqlscripts",
+			"apiVersion": "2019-06-01-preview",
+			"properties": {
+				"folder": {
+					"name": "02_SQL_DEDICADO"
+				},
+				"content": {
+					"query": "IF NOT EXISTS (SELECT * FROM sys.objects O JOIN sys.schemas S ON O.schema_id = S.schema_id WHERE O.NAME = 'D_PRODUTOS' AND O.TYPE = 'U' AND S.NAME = 'SILVER')\nCREATE TABLE SILVER.D_PRODUTOS\n\t(\n\t [ID_PROD] int,\n\t [NOME_PRODUTO] nvarchar(4000),\n\t [ID_CATEGORIA] int,\n\t [ID_UNIDADE] nvarchar(4000),\n\t [PRECO] numeric(10,2)\n\t)\nWITH\n\t(\n\tDISTRIBUTION = ROUND_ROBIN,\n\t CLUSTERED COLUMNSTORE INDEX\n\t -- HEAP\n\t)\nGO\n\n--Uncomment the 4 lines below to create a stored procedure for data pipeline orchestration​\n--CREATE PROC bulk_load_D_PRODUTOS\n--AS\n--BEGIN\nCOPY INTO SILVER.D_PRODUTOS\n(ID_PROD 1, NOME_PRODUTO 2, ID_CATEGORIA 3, ID_UNIDADE 4, PRECO 5)\nFROM 'https://adlstrnsolar99.dfs.core.windows.net/treinamento/silver/produtos'\nWITH\n(\n\tFILE_TYPE = 'PARQUET'\n\t,MAXERRORS = 0\n)\n--END\nGO\n\nSELECT TOP 100 * FROM SILVER.D_PRODUTOS\nGO",
+					"metadata": {
+						"language": "sql"
+					},
+					"currentConnection": {
+						"databaseName": "dw01",
+						"poolName": "dw01"
+					},
+					"resultLimit": 5000
+				},
+				"type": "SqlQuery"
+			},
+			"dependsOn": []
+		},
+		{
+			"name": "[concat(parameters('workspaceName'), '/10_CRIA_TABELA_EXTERNA_UNIDADE')]",
 			"type": "Microsoft.Synapse/workspaces/sqlscripts",
 			"apiVersion": "2019-06-01-preview",
 			"properties": {
@@ -1943,7 +2533,7 @@
 					"name": "01_SERVERLESS"
 				},
 				"content": {
-					"query": "CREATE EXTERNAL TABLE SILVER.D_VENDEDORES (\n\t[ID_VENDEDOR] int,\n\t[NOME_VENDEDOR] nvarchar(4000),\n\t[SALARIO] numeric(10,2)\n\t)\n\tWITH (\n\tLOCATION = 'bronze/vendedores/**',\n\tDATA_SOURCE = [treinamento_adlstrnsolar99_dfs_core_windows_net],\n\tFILE_FORMAT = [ParquetFormat]\n\t)\nGO",
+					"query": "--DROP EXTERNAL TABLE SILVER.D_UNIDADE\nCREATE EXTERNAL TABLE SILVER.D_UNIDADE (\n\t[ID_UNIDADE] nvarchar(4000),\n\t[DESC_UNIDADE] nvarchar(4000)\n\t)\n\tWITH (\n\tLOCATION = 'silver/unidade/**',\n\tDATA_SOURCE = [treinamento_adlstrnsolar99_dfs_core_windows_net],\n\tFILE_FORMAT = [ParquetFormat]\n\t)\nGO\n\n--SELECT * FROM SILVER.D_UNIDADE ",
 					"metadata": {
 						"language": "sql"
 					},
@@ -1958,7 +2548,30 @@
 			"dependsOn": []
 		},
 		{
-			"name": "[concat(parameters('workspaceName'), '/11_CRIA_TABELA_EXTERNA_VENDAS')]",
+			"name": "[concat(parameters('workspaceName'), '/11_CRIA_TABELA_D_UNIDADE')]",
+			"type": "Microsoft.Synapse/workspaces/sqlscripts",
+			"apiVersion": "2019-06-01-preview",
+			"properties": {
+				"folder": {
+					"name": "02_SQL_DEDICADO"
+				},
+				"content": {
+					"query": "IF NOT EXISTS (SELECT * FROM sys.objects O JOIN sys.schemas S ON O.schema_id = S.schema_id WHERE O.NAME = 'D_UNIDADE' AND O.TYPE = 'U' AND S.NAME = 'SILVER')\nCREATE TABLE SILVER.D_UNIDADE\n\t(\n\t [ID_UNIDADE] nvarchar(4000),\n\t [DESC_UNIDADE] nvarchar(4000)\n\t)\nWITH\n\t(\n\tDISTRIBUTION = ROUND_ROBIN,\n\t CLUSTERED COLUMNSTORE INDEX\n\t -- HEAP\n\t)\nGO\n\n--Uncomment the 4 lines below to create a stored procedure for data pipeline orchestration​\n--CREATE PROC bulk_load_D_UNIDADE\n--AS\n--BEGIN\nCOPY INTO SILVER.D_UNIDADE\n(ID_UNIDADE 1, DESC_UNIDADE 2)\nFROM 'https://adlstrnsolar99.dfs.core.windows.net/treinamento/silver/unidade'\nWITH\n(\n\tFILE_TYPE = 'PARQUET'\n\t,MAXERRORS = 0\n)\n--END\nGO\n\nSELECT TOP 100 * FROM SILVER.D_UNIDADE\nGO",
+					"metadata": {
+						"language": "sql"
+					},
+					"currentConnection": {
+						"databaseName": "dw01",
+						"poolName": "dw01"
+					},
+					"resultLimit": 5000
+				},
+				"type": "SqlQuery"
+			},
+			"dependsOn": []
+		},
+		{
+			"name": "[concat(parameters('workspaceName'), '/11_CRIA_TABELA_EXTERNA_VENDEDORES')]",
 			"type": "Microsoft.Synapse/workspaces/sqlscripts",
 			"apiVersion": "2019-06-01-preview",
 			"properties": {
@@ -1966,7 +2579,7 @@
 					"name": "01_SERVERLESS"
 				},
 				"content": {
-					"query": "\nCREATE EXTERNAL TABLE SILVER.VENDAS (\n\t[NUM_VENDA] int,\n\t[DATA_VENDA] datetime2(7),\n\t[ID_CLIENTE] int,\n\t[ID_VENDEDOR] int,\n\t[STATUS] nvarchar(4000)\n\t)\n\tWITH (\n\tLOCATION = 'bronze/vendas/**',\n\tDATA_SOURCE = [treinamento_adlstrnsolar99_dfs_core_windows_net],\n\tFILE_FORMAT = [ParquetFormat]\n\t)\nGO",
+					"query": "--drop EXTERNAL TABLE SILVER.D_VENDEDORES\nCREATE EXTERNAL TABLE SILVER.D_VENDEDORES (\n\t[ID_VENDEDOR] int,\n\t[NOME_VENDEDOR] nvarchar(4000),\n\t[SALARIO] numeric(10,2)\n\t)\n\tWITH (\n\tLOCATION = 'silver/vendedores/**',\n\tDATA_SOURCE = [treinamento_adlstrnsolar99_dfs_core_windows_net],\n\tFILE_FORMAT = [ParquetFormat]\n\t)\nGO\n--select * from SILVER.D_VENDEDORES",
 					"metadata": {
 						"language": "sql"
 					},
@@ -1981,7 +2594,30 @@
 			"dependsOn": []
 		},
 		{
-			"name": "[concat(parameters('workspaceName'), '/12_CRIA_TABELA_EXTERNA_VENDAS_ITENS')]",
+			"name": "[concat(parameters('workspaceName'), '/12_CRIA_TABELA_D_VENDEDORES')]",
+			"type": "Microsoft.Synapse/workspaces/sqlscripts",
+			"apiVersion": "2019-06-01-preview",
+			"properties": {
+				"folder": {
+					"name": "02_SQL_DEDICADO"
+				},
+				"content": {
+					"query": "IF NOT EXISTS (SELECT * FROM sys.objects O JOIN sys.schemas S ON O.schema_id = S.schema_id WHERE O.NAME = 'D_VENDEDORES' AND O.TYPE = 'U' AND S.NAME = 'SILVER')\nCREATE TABLE SILVER.D_VENDEDORES\n\t(\n\t [ID_VENDEDOR] int,\n\t [NOME_VENDEDOR] nvarchar(4000),\n\t [SALARIO] numeric(10,2)\n\t)\nWITH\n\t(\n\tDISTRIBUTION = ROUND_ROBIN,\n\t CLUSTERED COLUMNSTORE INDEX\n\t -- HEAP\n\t)\nGO\n\n--Uncomment the 4 lines below to create a stored procedure for data pipeline orchestration​\n--CREATE PROC bulk_load_D_VENDEDORES\n--AS\n--BEGIN\nCOPY INTO SILVER.D_VENDEDORES\n(ID_VENDEDOR 1, NOME_VENDEDOR 2, SALARIO 3)\nFROM 'https://adlstrnsolar99.dfs.core.windows.net/treinamento/silver/vendedores'\nWITH\n(\n\tFILE_TYPE = 'PARQUET'\n\t,MAXERRORS = 0\n)\n--END\nGO\n\nSELECT TOP 100 * FROM SILVER.D_VENDEDORES\nGO",
+					"metadata": {
+						"language": "sql"
+					},
+					"currentConnection": {
+						"databaseName": "dw01",
+						"poolName": "dw01"
+					},
+					"resultLimit": 5000
+				},
+				"type": "SqlQuery"
+			},
+			"dependsOn": []
+		},
+		{
+			"name": "[concat(parameters('workspaceName'), '/12_CRIA_TABELA_EXTERNA_VENDAS')]",
 			"type": "Microsoft.Synapse/workspaces/sqlscripts",
 			"apiVersion": "2019-06-01-preview",
 			"properties": {
@@ -1989,7 +2625,7 @@
 					"name": "01_SERVERLESS"
 				},
 				"content": {
-					"query": "CREATE EXTERNAL TABLE SILVER.VENDAS_ITENS (\n\t[NUM_VENDA] int,\n\t[NUM_SEQ] int,\n\t[ID_PROD] int,\n\t[QTDE] numeric(10,2),\n\t[VAL_UNIT] numeric(10,2),\n\t[VAL_TOTAL] numeric(10,2)\n\t)\n\tWITH (\n\tLOCATION = 'bronze/vendas_itens/**',\n\tDATA_SOURCE = [treinamento_adlstrnsolar99_dfs_core_windows_net],\n\tFILE_FORMAT = [ParquetFormat]\n\t)\nGO\n",
+					"query": "-- DROP EXTERNAL TABLE SILVER.VENDAS\nCREATE EXTERNAL TABLE SILVER.VENDAS (\n\t[NUM_VENDA] int,\n\t[DATA_VENDA] datetime2(7),\n\t[ID_CLIENTE] int,\n\t[ID_VENDEDOR] int,\n\t[STATUS] nvarchar(4000)\n\t)\n\tWITH (\n\tLOCATION = 'silver/vendas/**',\n\tDATA_SOURCE = [treinamento_adlstrnsolar99_dfs_core_windows_net],\n\tFILE_FORMAT = [ParquetFormat]\n\t)\nGO\n\n--select * from SILVER.VENDAS",
 					"metadata": {
 						"language": "sql"
 					},
@@ -2004,7 +2640,76 @@
 			"dependsOn": []
 		},
 		{
-			"name": "[concat(parameters('workspaceName'), '/13_VW_FATO_VENDAS')]",
+			"name": "[concat(parameters('workspaceName'), '/13_CRIA_FATO_VENDAS')]",
+			"type": "Microsoft.Synapse/workspaces/sqlscripts",
+			"apiVersion": "2019-06-01-preview",
+			"properties": {
+				"folder": {
+					"name": "02_SQL_DEDICADO"
+				},
+				"content": {
+					"query": "IF NOT EXISTS (SELECT * FROM sys.objects O JOIN sys.schemas S ON O.schema_id = S.schema_id WHERE O.NAME = 'FATO_VENDAS' AND O.TYPE = 'U' AND S.NAME = 'GOLD')\nCREATE TABLE GOLD.FATO_VENDAS\n\t(\n\t [NUM_VENDA] int,\n\t [DATA_VENDA] datetime2(7),\n\t [ID_CLIENTE] int,\n\t [STATUS] nvarchar(4000),\n\t [ID_VENDEDOR] int,\n\t [NUM_SEQ] int,\n\t [ID_PROD] int,\n\t [QTDE] numeric(10,2),\n\t [VAL_UNIT] numeric(10,2),\n\t [VAL_TOTAL] numeric(10,2)\n\t)\nWITH\n\t(\n\tDISTRIBUTION = HASH([NUM_VENDA]),\n\t CLUSTERED COLUMNSTORE INDEX\n\t -- HEAP\n\t)\nGO\n\n--Uncomment the 4 lines below to create a stored procedure for data pipeline orchestration​\n--CREATE PROC bulk_load_FATO_VENDAS\n--AS\n--BEGIN\nCOPY INTO GOLD.FATO_VENDAS\n(NUM_VENDA 1, DATA_VENDA 2, ID_CLIENTE 3, STATUS 4, ID_VENDEDOR 5, NUM_SEQ 6, ID_PROD 7, QTDE 8, VAL_UNIT 9, VAL_TOTAL 10)\nFROM 'https://adlstrnsolar99.dfs.core.windows.net/treinamento/gold/fato_vendas'\nWITH\n(\n\tFILE_TYPE = 'PARQUET'\n\t,MAXERRORS = 0\n)\n--END\nGO\n\nSELECT TOP 100 * FROM GOLD.FATO_VENDAS\nGO",
+					"metadata": {
+						"language": "sql"
+					},
+					"currentConnection": {
+						"databaseName": "dw01",
+						"poolName": "dw01"
+					},
+					"resultLimit": 5000
+				},
+				"type": "SqlQuery"
+			},
+			"dependsOn": []
+		},
+		{
+			"name": "[concat(parameters('workspaceName'), '/13_CRIA_TABELA_EXTERNA_VENDAS_ITENS')]",
+			"type": "Microsoft.Synapse/workspaces/sqlscripts",
+			"apiVersion": "2019-06-01-preview",
+			"properties": {
+				"folder": {
+					"name": "01_SERVERLESS"
+				},
+				"content": {
+					"query": "-- drop EXTERNAL TABLE SILVER.VENDAS_ITENS \nCREATE EXTERNAL TABLE SILVER.VENDAS_ITENS (\n\t[NUM_VENDA] int,\n\t[NUM_SEQ] int,\n\t[ID_PROD] int,\n\t[QTDE] numeric(10,2),\n\t[VAL_UNIT] numeric(10,2),\n\t[VAL_TOTAL] numeric(10,2)\n\t)\n\tWITH (\n\tLOCATION = 'silver/venda_itens/**',\n\tDATA_SOURCE = [treinamento_adlstrnsolar99_dfs_core_windows_net],\n\tFILE_FORMAT = [ParquetFormat]\n\t)\nGO\n\n--select * from SILVER.VENDAS_ITENS \n",
+					"metadata": {
+						"language": "sql"
+					},
+					"currentConnection": {
+						"databaseName": "lhdw",
+						"poolName": "Built-in"
+					},
+					"resultLimit": 5000
+				},
+				"type": "SqlQuery"
+			},
+			"dependsOn": []
+		},
+		{
+			"name": "[concat(parameters('workspaceName'), '/15_VERIFICAR_TABELA_DEFRAG')]",
+			"type": "Microsoft.Synapse/workspaces/sqlscripts",
+			"apiVersion": "2019-06-01-preview",
+			"properties": {
+				"folder": {
+					"name": "02_SQL_DEDICADO"
+				},
+				"content": {
+					"query": "DBCC PDW_SHOWSPACEUSED('GOLD.FATO_VENDAS');",
+					"metadata": {
+						"language": "sql"
+					},
+					"currentConnection": {
+						"databaseName": "dw01",
+						"poolName": "dw01"
+					},
+					"resultLimit": 5000
+				},
+				"type": "SqlQuery"
+			},
+			"dependsOn": []
+		},
+		{
+			"name": "[concat(parameters('workspaceName'), '/14_VW_FATO_VENDAS')]",
 			"type": "Microsoft.Synapse/workspaces/sqlscripts",
 			"apiVersion": "2019-06-01-preview",
 			"properties": {
@@ -2027,7 +2732,7 @@
 			"dependsOn": []
 		},
 		{
-			"name": "[concat(parameters('workspaceName'), '/14_SELECTCS')]",
+			"name": "[concat(parameters('workspaceName'), '/15_SELECT')]",
 			"type": "Microsoft.Synapse/workspaces/sqlscripts",
 			"apiVersion": "2019-06-01-preview",
 			"properties": {
@@ -2050,12 +2755,38 @@
 			"dependsOn": []
 		},
 		{
-			"name": "[concat(parameters('workspaceName'), '/14_VW__UNIDADE')]",
+			"name": "[concat(parameters('workspaceName'), '/16_VW_TAMANHO_TABELAS')]",
 			"type": "Microsoft.Synapse/workspaces/sqlscripts",
 			"apiVersion": "2019-06-01-preview",
 			"properties": {
+				"folder": {
+					"name": "02_SQL_DEDICADO"
+				},
 				"content": {
-					"query": "-- This is auto-generated code\nCREATE VIEW VW_UNIDADE\nAS\nSELECT\n    TOP 100 *\nFROM\n    OPENROWSET(\n        BULK 'https://adlstrnsolar99.dfs.core.windows.net/treinamento/bronze/unidade/dbo.UNIDADE.parquet',\n        FORMAT = 'PARQUET'\n    ) AS [result]\n",
+					"query": "CREATE VIEW dbo.vTableSizes\nAS\nWITH base\nAS\n(\nSELECT\n GETDATE()                                                             AS  [execution_time]\n, DB_NAME()                                                            AS  [database_name]\n, s.name                                                               AS  [schema_name]\n, t.name                                                               AS  [table_name]\n, QUOTENAME(s.name)+'.'+QUOTENAME(t.name)                              AS  [two_part_name]\n, nt.[name]                                                            AS  [node_table_name]\n, ROW_NUMBER() OVER(PARTITION BY nt.[name] ORDER BY (SELECT NULL))     AS  [node_table_name_seq]\n, tp.[distribution_policy_desc]                                        AS  [distribution_policy_name]\n, c.[name]                                                             AS  [distribution_column]\n, nt.[distribution_id]                                                 AS  [distribution_id]\n, i.[type]                                                             AS  [index_type]\n, i.[type_desc]                                                        AS  [index_type_desc]\n, nt.[pdw_node_id]                                                     AS  [pdw_node_id]\n, pn.[type]                                                            AS  [pdw_node_type]\n, pn.[name]                                                            AS  [pdw_node_name]\n, di.name                                                              AS  [dist_name]\n, di.position                                                          AS  [dist_position]\n, nps.[partition_number]                                               AS  [partition_nmbr]\n, nps.[reserved_page_count]                                            AS  [reserved_space_page_count]\n, nps.[reserved_page_count] - nps.[used_page_count]                    AS  [unused_space_page_count]\n, nps.[in_row_data_page_count]\n    + nps.[row_overflow_used_page_count]\n    + nps.[lob_used_page_count]                                        AS  [data_space_page_count]\n, nps.[reserved_page_count]\n - (nps.[reserved_page_count] - nps.[used_page_count])\n - ([in_row_data_page_count]\n         + [row_overflow_used_page_count]+[lob_used_page_count])       AS  [index_space_page_count]\n, nps.[row_count]                                                      AS  [row_count]\nfrom\n    sys.schemas s\nINNER JOIN sys.tables t\n    ON s.[schema_id] = t.[schema_id]\nINNER JOIN sys.indexes i\n    ON  t.[object_id] = i.[object_id]\n    AND i.[index_id] <= 1\nINNER JOIN sys.pdw_table_distribution_properties tp\n    ON t.[object_id] = tp.[object_id]\nINNER JOIN sys.pdw_table_mappings tm\n    ON t.[object_id] = tm.[object_id]\nINNER JOIN sys.pdw_nodes_tables nt\n    ON tm.[physical_name] = nt.[name]\nINNER JOIN sys.dm_pdw_nodes pn\n    ON  nt.[pdw_node_id] = pn.[pdw_node_id]\nINNER JOIN sys.pdw_distributions di\n    ON  nt.[distribution_id] = di.[distribution_id]\nINNER JOIN sys.dm_pdw_nodes_db_partition_stats nps\n    ON nt.[object_id] = nps.[object_id]\n    AND nt.[pdw_node_id] = nps.[pdw_node_id]\n    AND nt.[distribution_id] = nps.[distribution_id]\nLEFT OUTER JOIN (select * from sys.pdw_column_distribution_properties where distribution_ordinal = 1) cdp\n    ON t.[object_id] = cdp.[object_id]\nLEFT OUTER JOIN sys.columns c\n    ON cdp.[object_id] = c.[object_id]\n    AND cdp.[column_id] = c.[column_id]\nWHERE pn.[type] = 'COMPUTE'\n)\n, size\nAS\n(\nSELECT\n   [execution_time]\n,  [database_name]\n,  [schema_name]\n,  [table_name]\n,  [two_part_name]\n,  [node_table_name]\n,  [node_table_name_seq]\n,  [distribution_policy_name]\n,  [distribution_column]\n,  [distribution_id]\n,  [index_type]\n,  [index_type_desc]\n,  [pdw_node_id]\n,  [pdw_node_type]\n,  [pdw_node_name]\n,  [dist_name]\n,  [dist_position]\n,  [partition_nmbr]\n,  [reserved_space_page_count]\n,  [unused_space_page_count]\n,  [data_space_page_count]\n,  [index_space_page_count]\n,  [row_count]\n,  ([reserved_space_page_count] * 8.0)                                 AS [reserved_space_KB]\n,  ([reserved_space_page_count] * 8.0)/1000                            AS [reserved_space_MB]\n,  ([reserved_space_page_count] * 8.0)/1000000                         AS [reserved_space_GB]\n,  ([reserved_space_page_count] * 8.0)/1000000000                      AS [reserved_space_TB]\n,  ([unused_space_page_count]   * 8.0)                                 AS [unused_space_KB]\n,  ([unused_space_page_count]   * 8.0)/1000                            AS [unused_space_MB]\n,  ([unused_space_page_count]   * 8.0)/1000000                         AS [unused_space_GB]\n,  ([unused_space_page_count]   * 8.0)/1000000000                      AS [unused_space_TB]\n,  ([data_space_page_count]     * 8.0)                                 AS [data_space_KB]\n,  ([data_space_page_count]     * 8.0)/1000                            AS [data_space_MB]\n,  ([data_space_page_count]     * 8.0)/1000000                         AS [data_space_GB]\n,  ([data_space_page_count]     * 8.0)/1000000000                      AS [data_space_TB]\n,  ([index_space_page_count]  * 8.0)                                   AS [index_space_KB]\n,  ([index_space_page_count]  * 8.0)/1000                              AS [index_space_MB]\n,  ([index_space_page_count]  * 8.0)/1000000                           AS [index_space_GB]\n,  ([index_space_page_count]  * 8.0)/1000000000                        AS [index_space_TB]\nFROM base\n)\nSELECT *\nFROM size\n;",
+					"metadata": {
+						"language": "sql"
+					},
+					"currentConnection": {
+						"databaseName": "dw01",
+						"poolName": "dw01"
+					},
+					"resultLimit": 5000
+				},
+				"type": "SqlQuery"
+			},
+			"dependsOn": []
+		},
+		{
+			"name": "[concat(parameters('workspaceName'), '/15_VW__UNIDADE')]",
+			"type": "Microsoft.Synapse/workspaces/sqlscripts",
+			"apiVersion": "2019-06-01-preview",
+			"properties": {
+				"folder": {
+					"name": "01_SERVERLESS"
+				},
+				"content": {
+					"query": "-- This is auto-generated code\nCREATE OR ALTER VIEW VW_UNIDADE\nAS\nSELECT\n    *\nFROM\n    OPENROWSET(\n        BULK 'https://adlstrnsolar99.dfs.core.windows.net/treinamento/silver/unidade/*.parquet',\n        FORMAT = 'PARQUET'\n    ) AS [result]\n",
 					"metadata": {
 						"language": "sql"
 					},
@@ -2070,7 +2801,7 @@
 			"dependsOn": []
 		},
 		{
-			"name": "[concat(parameters('workspaceName'), '/15_DROP_EXERTERNAL_TABS')]",
+			"name": "[concat(parameters('workspaceName'), '/16_DROP_EXERTERNAL_TABS')]",
 			"type": "Microsoft.Synapse/workspaces/sqlscripts",
 			"apiVersion": "2019-06-01-preview",
 			"properties": {
@@ -2093,10 +2824,59 @@
 			"dependsOn": []
 		},
 		{
-			"name": "[concat(parameters('workspaceName'), '/16_external_table_carros')]",
+			"name": "[concat(parameters('workspaceName'), '/17_VERIFICAR_TABELAS_DEFRAG')]",
 			"type": "Microsoft.Synapse/workspaces/sqlscripts",
 			"apiVersion": "2019-06-01-preview",
 			"properties": {
+				"folder": {
+					"name": "02_SQL_DEDICADO"
+				},
+				"content": {
+					"query": "--Para identificar quais tabelas têm distorção de dados maior de 10%:\nselect *\nfrom dbo.vTableSizes\nwhere two_part_name in\n    (\n    select two_part_name\n    from dbo.vTableSizes\n    where row_count > 0\n    group by two_part_name\n    having (max(row_count * 1.000) - min(row_count * 1.000))/max(row_count * 1.000) >= .10\n    )\norder by two_part_name, row_count\n;",
+					"metadata": {
+						"language": "sql"
+					},
+					"currentConnection": {
+						"databaseName": "dw01",
+						"poolName": "dw01"
+					},
+					"resultLimit": 5000
+				},
+				"type": "SqlQuery"
+			},
+			"dependsOn": []
+		},
+		{
+			"name": "[concat(parameters('workspaceName'), '/18_RESUMO_ESPACO_TABELAS')]",
+			"type": "Microsoft.Synapse/workspaces/sqlscripts",
+			"apiVersion": "2019-06-01-preview",
+			"properties": {
+				"folder": {
+					"name": "02_SQL_DEDICADO"
+				},
+				"content": {
+					"query": "--Esta consulta retorna as linhas e o espaço por tabela. \n--Ele permite que você veja quais tabelas são suas maiores tabelas e se \n-- elas são de rodízio, replicadas ou distribuídas por hash. \n-- Nas tabelas distribuídas em hash, a consulta exibe a coluna de distribuição.\nSELECT\n     database_name\n,    schema_name\n,    table_name\n,    distribution_policy_name\n,      distribution_column\n,    index_type_desc\n,    COUNT(distinct partition_nmbr) as nbr_partitions\n,    SUM(row_count)                 as table_row_count\n,    SUM(reserved_space_GB)         as table_reserved_space_GB\n,    SUM(data_space_GB)             as table_data_space_GB\n,    SUM(index_space_GB)            as table_index_space_GB\n,    SUM(unused_space_GB)           as table_unused_space_GB\nFROM\n    dbo.vTableSizes\nGROUP BY\n     database_name\n,    schema_name\n,    table_name\n,    distribution_policy_name\n,      distribution_column\n,    index_type_desc\nORDER BY\n    table_reserved_space_GB desc\n;",
+					"metadata": {
+						"language": "sql"
+					},
+					"currentConnection": {
+						"databaseName": "dw01",
+						"poolName": "dw01"
+					},
+					"resultLimit": 5000
+				},
+				"type": "SqlQuery"
+			},
+			"dependsOn": []
+		},
+		{
+			"name": "[concat(parameters('workspaceName'), '/17_external_table_carros')]",
+			"type": "Microsoft.Synapse/workspaces/sqlscripts",
+			"apiVersion": "2019-06-01-preview",
+			"properties": {
+				"folder": {
+					"name": "01_SERVERLESS"
+				},
 				"content": {
 					"query": "IF NOT EXISTS (SELECT * FROM sys.external_file_formats WHERE name = 'ParquetFormat') \n\tCREATE EXTERNAL FILE FORMAT [SynapseParquetFormat] \n\tWITH ( FORMAT_TYPE = PARQUET)\nGO\n\nIF NOT EXISTS (SELECT * FROM sys.external_data_sources WHERE name = 'treinamento_adlstrnsolar99_dfs_core_windows_net') \n\tCREATE EXTERNAL DATA SOURCE [treinamento_adlstrnsolar99_dfs_core_windows_net] \n\tWITH (\n\t\tLOCATION = 'abfss://treinamento@adlstrnsolar99.dfs.core.windows.net' \n\t)\nGO\n\nCREATE EXTERNAL TABLE silver.carros (\n\t[id] nvarchar(4000),\n\t[primeiro_nome] nvarchar(4000),\n\t[ultimo_nome] nvarchar(4000),\n\t[email] nvarchar(4000),\n\t[sexo] nvarchar(4000),\n\t[cidade] nvarchar(4000),\n\t[pais] nvarchar(4000),\n\t[codigo_pais] nvarchar(4000),\n\t[Time_zone] nvarchar(4000),\n\t[empresa] nvarchar(4000),\n\t[profissao] nvarchar(4000),\n\t[etnia] nvarchar(4000),\n\t[idioma] nvarchar(4000),\n\t[montadora] nvarchar(4000),\n\t[carro] nvarchar(4000),\n\t[nascimento] nvarchar(4000)\n\t)\n\tWITH (\n\tLOCATION = 'bronze/crm/output/**',\n\tDATA_SOURCE = [treinamento_adlstrnsolar99_dfs_core_windows_net],\n\tFILE_FORMAT = [SynapseParquetFormat]\n\t)\nGO\n\n\nSELECT TOP 100 * FROM silver.carros\nGO",
 					"metadata": {
@@ -2105,6 +2885,75 @@
 					"currentConnection": {
 						"databaseName": "lhdw",
 						"poolName": "Built-in"
+					},
+					"resultLimit": 5000
+				},
+				"type": "SqlQuery"
+			},
+			"dependsOn": []
+		},
+		{
+			"name": "[concat(parameters('workspaceName'), '/19_ESPACO_DISTRIBUICAO')]",
+			"type": "Microsoft.Synapse/workspaces/sqlscripts",
+			"apiVersion": "2019-06-01-preview",
+			"properties": {
+				"folder": {
+					"name": "02_SQL_DEDICADO"
+				},
+				"content": {
+					"query": "--Espaço da tabela pelo tipo de distribuição\n\nSELECT\n     distribution_policy_name\n,    SUM(row_count)                as table_type_row_count\n,    SUM(reserved_space_GB)        as table_type_reserved_space_GB\n,    SUM(data_space_GB)            as table_type_data_space_GB\n,    SUM(index_space_GB)           as table_type_index_space_GB\n,    SUM(unused_space_GB)          as table_type_unused_space_GB\nFROM dbo.vTableSizes\nGROUP BY distribution_policy_name\n;",
+					"metadata": {
+						"language": "sql"
+					},
+					"currentConnection": {
+						"databaseName": "dw01",
+						"poolName": "dw01"
+					},
+					"resultLimit": 5000
+				},
+				"type": "SqlQuery"
+			},
+			"dependsOn": []
+		},
+		{
+			"name": "[concat(parameters('workspaceName'), '/20_ESPACO_INDEX')]",
+			"type": "Microsoft.Synapse/workspaces/sqlscripts",
+			"apiVersion": "2019-06-01-preview",
+			"properties": {
+				"folder": {
+					"name": "02_SQL_DEDICADO"
+				},
+				"content": {
+					"query": "--Espaço da tabela pelo tipo de índice\n\nSELECT\n     index_type_desc\n,    SUM(row_count)                as table_type_row_count\n,    SUM(reserved_space_GB)        as table_type_reserved_space_GB\n,    SUM(data_space_GB)            as table_type_data_space_GB\n,    SUM(index_space_GB)           as table_type_index_space_GB\n,    SUM(unused_space_GB)          as table_type_unused_space_GB\nFROM dbo.vTableSizes\nGROUP BY index_type_desc\n;",
+					"metadata": {
+						"language": "sql"
+					},
+					"currentConnection": {
+						"databaseName": "dw01",
+						"poolName": "dw01"
+					},
+					"resultLimit": 5000
+				},
+				"type": "SqlQuery"
+			},
+			"dependsOn": []
+		},
+		{
+			"name": "[concat(parameters('workspaceName'), '/21_RESUMO_DISTRIBUICAO')]",
+			"type": "Microsoft.Synapse/workspaces/sqlscripts",
+			"apiVersion": "2019-06-01-preview",
+			"properties": {
+				"folder": {
+					"name": "02_SQL_DEDICADO"
+				},
+				"content": {
+					"query": "--Resumo do espaço de distribuição\nSELECT\n    distribution_id\n,    SUM(row_count)                as total_node_distribution_row_count\n,    SUM(reserved_space_MB)        as total_node_distribution_reserved_space_MB\n,    SUM(data_space_MB)            as total_node_distribution_data_space_MB\n,    SUM(index_space_MB)           as total_node_distribution_index_space_MB\n,    SUM(unused_space_MB)          as total_node_distribution_unused_space_MB\nFROM dbo.vTableSizes\nGROUP BY     distribution_id\nORDER BY    distribution_id\n;",
+					"metadata": {
+						"language": "sql"
+					},
+					"currentConnection": {
+						"databaseName": "dw01",
+						"poolName": "dw01"
 					},
 					"resultLimit": 5000
 				},
@@ -2136,12 +2985,15 @@
 			"dependsOn": []
 		},
 		{
-			"name": "[concat(parameters('workspaceName'), '/SQL script 1')]",
+			"name": "[concat(parameters('workspaceName'), '/99_EXEMPLO_FATO')]",
 			"type": "Microsoft.Synapse/workspaces/sqlscripts",
 			"apiVersion": "2019-06-01-preview",
 			"properties": {
+				"folder": {
+					"name": "02_SQL_DEDICADO"
+				},
 				"content": {
-					"query": "-- This is auto-generated code\nSELECT\n    TOP 100 *\nFROM\n    OPENROWSET(\n        BULK 'https://adlstrnsolar99.dfs.core.windows.net/treinamento/bronze/crm/output/**',\n        FORMAT = 'PARQUET'\n    ) AS [result]\n",
+					"query": "--REFERENCIA\n--https://github.com/MicrosoftDocs/azure-docs.pt-br/blob/master/articles/synapse-analytics/sql-data-warehouse/sql-data-warehouse-tables-distribute.md\nCREATE TABLE [dbo].[FactInternetSales_CustomerKey]\nWITH (  CLUSTERED COLUMNSTORE INDEX\n     ,  DISTRIBUTION =  HASH([CustomerKey])\n     ,  PARTITION       ( [OrderDateKey] RANGE RIGHT FOR VALUES (   20000101, 20010101, 20020101, 20030101\n                                                                ,   20040101, 20050101, 20060101, 20070101\n                                                                ,   20080101, 20090101, 20100101, 20110101\n                                                                ,   20120101, 20130101, 20140101, 20150101\n                                                                ,   20160101, 20170101, 20180101, 20190101\n                                                                ,   20200101, 20210101, 20220101, 20230101\n                                                                ,   20240101, 20250101, 20260101, 20270101\n                                                                ,   20280101, 20290101\n                                                                )\n                        )\n    )\nAS\nSELECT  *\nFROM    [dbo].[FactInternetSales]\nOPTION  (LABEL  = 'CTAS : FactInternetSales_CustomerKey')\n;\n\n--CRIAR ESTATISTICAS PARA NOVA TABELA\nCREATE STATISTICS [ProductKey] ON [FactInternetSales_CustomerKey] ([ProductKey]);\nCREATE STATISTICS [OrderDateKey] ON [FactInternetSales_CustomerKey] ([OrderDateKey]);\nCREATE STATISTICS [CustomerKey] ON [FactInternetSales_CustomerKey] ([CustomerKey]);\nCREATE STATISTICS [PromotionKey] ON [FactInternetSales_CustomerKey] ([PromotionKey]);\nCREATE STATISTICS [SalesOrderNumber] ON [FactInternetSales_CustomerKey] ([SalesOrderNumber]);\nCREATE STATISTICS [OrderQuantity] ON [FactInternetSales_CustomerKey] ([OrderQuantity]);\nCREATE STATISTICS [UnitPrice] ON [FactInternetSales_CustomerKey] ([UnitPrice]);\nCREATE STATISTICS [SalesAmount] ON [FactInternetSales_CustomerKey] ([SalesAmount]);\n\n--Rename the tables\nRENAME OBJECT [dbo].[FactInternetSales] TO [FactInternetSales_ProductKey];\nRENAME OBJECT [dbo].[FactInternetSales_CustomerKey] TO [FactInternetSales];",
 					"metadata": {
 						"language": "sql"
 					},
@@ -2156,12 +3008,38 @@
 			"dependsOn": []
 		},
 		{
-			"name": "[concat(parameters('workspaceName'), '/SQL script 2')]",
+			"name": "[concat(parameters('workspaceName'), '/ATIVAR_CDC')]",
 			"type": "Microsoft.Synapse/workspaces/sqlscripts",
 			"apiVersion": "2019-06-01-preview",
 			"properties": {
+				"folder": {
+					"name": "99_Outros"
+				},
 				"content": {
-					"query": "-- This is auto-generated code\nSELECT\n    TOP 100 *\nFROM\n    OPENROWSET(\n        BULK 'https://adlstrnsolar99.dfs.core.windows.net/treinamento/bronze/crm/output/ano=1953/**',\n        FORMAT = 'PARQUET'\n    ) AS [result]\n",
+					"query": "--ATIVAR CDC\n\nUSE minierp    \nGO   EXEC sys.sp_cdc_enable_db   GO  ",
+					"metadata": {
+						"language": "sql"
+					},
+					"currentConnection": {
+						"databaseName": "nyctlctutorial",
+						"poolName": "Built-in"
+					},
+					"resultLimit": 5000
+				},
+				"type": "SqlQuery"
+			},
+			"dependsOn": []
+		},
+		{
+			"name": "[concat(parameters('workspaceName'), '/Ler_parquet')]",
+			"type": "Microsoft.Synapse/workspaces/sqlscripts",
+			"apiVersion": "2019-06-01-preview",
+			"properties": {
+				"folder": {
+					"name": "99_Outros"
+				},
+				"content": {
+					"query": "-- This is auto-generated code\nSELECT\n    TOP 100 *\nFROM\n    OPENROWSET(\n        BULK 'https://adlstrnsolar99.dfs.core.windows.net/treinamento/silver/categoria/**',\n        FORMAT = 'PARQUET'\n    ) AS [result]\n",
 					"metadata": {
 						"language": "sql"
 					},
@@ -2176,402 +3054,12 @@
 			"dependsOn": []
 		},
 		{
-			"name": "[concat(parameters('workspaceName'), '/SQL script 3')]",
-			"type": "Microsoft.Synapse/workspaces/sqlscripts",
-			"apiVersion": "2019-06-01-preview",
-			"properties": {
-				"content": {
-					"query": "-- This is auto-generated code\nSELECT\n    TOP 100 *\nFROM\n    OPENROWSET(\n        BULK 'https://adlstrnsolar99.dfs.core.windows.net/treinamento/bronze/crm/output/ano=1953/',\n        FORMAT = 'DELTA'\n    ) AS [result]\n",
-					"metadata": {
-						"language": "sql"
-					},
-					"currentConnection": {
-						"databaseName": "master",
-						"poolName": "Built-in"
-					},
-					"resultLimit": 5000
-				},
-				"type": "SqlQuery"
-			},
-			"dependsOn": []
-		},
-		{
-			"name": "[concat(parameters('workspaceName'), '/01_DF_Categoria')]",
-			"type": "Microsoft.Synapse/workspaces/notebooks",
-			"apiVersion": "2019-06-01-preview",
-			"properties": {
-				"nbformat": 4,
-				"nbformat_minor": 2,
-				"bigDataPool": {
-					"referenceName": "Cluster1",
-					"type": "BigDataPoolReference"
-				},
-				"sessionProperties": {
-					"driverMemory": "28g",
-					"driverCores": 4,
-					"executorMemory": "28g",
-					"executorCores": 4,
-					"numExecutors": 1,
-					"runAsWorkspaceSystemIdentity": false,
-					"conf": {
-						"spark.dynamicAllocation.enabled": "true",
-						"spark.dynamicAllocation.minExecutors": "1",
-						"spark.dynamicAllocation.maxExecutors": "5",
-						"spark.autotune.trackingId": "a9d8e342-4470-488f-9823-e85935295c2b"
-					}
-				},
-				"metadata": {
-					"saveOutput": true,
-					"enableDebugMode": false,
-					"kernelspec": {
-						"name": "synapse_pyspark",
-						"display_name": "Synapse PySpark"
-					},
-					"language_info": {
-						"name": "python"
-					},
-					"a365ComputeOptions": {
-						"id": "/subscriptions/fcdf740b-363d-4924-8de6-a7a7c85fa07f/resourceGroups/trn-synapse-solar-dev/providers/Microsoft.Synapse/workspaces/asa-trn-99/bigDataPools/Cluster1",
-						"name": "Cluster1",
-						"type": "Spark",
-						"endpoint": "https://asa-trn-99.dev.azuresynapse.net/livyApi/versions/2019-11-01-preview/sparkPools/Cluster1",
-						"auth": {
-							"type": "AAD",
-							"authResource": "https://dev.azuresynapse.net"
-						},
-						"sparkVersion": "3.2",
-						"nodeCount": 10,
-						"cores": 4,
-						"memory": 28
-					},
-					"sessionKeepAliveTimeout": 30
-				},
-				"cells": [
-					{
-						"cell_type": "code",
-						"metadata": {
-							"microsoft": {
-								"language": "python"
-							},
-							"collapsed": false
-						},
-						"source": [
-							"%%pyspark\r\n",
-							"df = spark.read.load('abfss://treinamento@adlstrnsolar99.dfs.core.windows.net/bronze/categoria/dbo.CATEGORIA.parquet', format='parquet')\r\n",
-							"display(df.limit(10))"
-						],
-						"outputs": [],
-						"execution_count": 2
-					}
-				]
-			},
-			"dependsOn": []
-		},
-		{
-			"name": "[concat(parameters('workspaceName'), '/02_LOAD_CRM')]",
-			"type": "Microsoft.Synapse/workspaces/notebooks",
-			"apiVersion": "2019-06-01-preview",
-			"properties": {
-				"nbformat": 4,
-				"nbformat_minor": 2,
-				"bigDataPool": {
-					"referenceName": "Cluster1",
-					"type": "BigDataPoolReference"
-				},
-				"sessionProperties": {
-					"driverMemory": "28g",
-					"driverCores": 4,
-					"executorMemory": "28g",
-					"executorCores": 4,
-					"numExecutors": 1,
-					"conf": {
-						"spark.dynamicAllocation.enabled": "true",
-						"spark.dynamicAllocation.minExecutors": "1",
-						"spark.dynamicAllocation.maxExecutors": "4",
-						"spark.autotune.trackingId": "2f8cc671-72c5-4533-aa6f-dedb7434081b"
-					}
-				},
-				"metadata": {
-					"saveOutput": true,
-					"enableDebugMode": false,
-					"kernelspec": {
-						"name": "synapse_pyspark",
-						"display_name": "Synapse PySpark"
-					},
-					"language_info": {
-						"name": "python"
-					},
-					"a365ComputeOptions": {
-						"id": "/subscriptions/fcdf740b-363d-4924-8de6-a7a7c85fa07f/resourceGroups/trn-synapse-solar-dev/providers/Microsoft.Synapse/workspaces/asa-trn-99/bigDataPools/Cluster1",
-						"name": "Cluster1",
-						"type": "Spark",
-						"endpoint": "https://asa-trn-99.dev.azuresynapse.net/livyApi/versions/2019-11-01-preview/sparkPools/Cluster1",
-						"auth": {
-							"type": "AAD",
-							"authResource": "https://dev.azuresynapse.net"
-						},
-						"sparkVersion": "3.2",
-						"nodeCount": 10,
-						"cores": 4,
-						"memory": 28
-					},
-					"sessionKeepAliveTimeout": 30
-				},
-				"cells": [
-					{
-						"cell_type": "code",
-						"metadata": {
-							"microsoft": {
-								"language": "python"
-							},
-							"collapsed": false
-						},
-						"source": [
-							"%%pyspark\r\n",
-							"df = spark.read.load('abfss://treinamento@adlstrnsolar99.dfs.core.windows.net/bronze/carros/CRM.csv', format='csv',\r\n",
-							"delimiter=\";\",\r\n",
-							"header=True\r\n",
-							")\r\n",
-							"display(df.limit(10))"
-						],
-						"outputs": [],
-						"execution_count": 2
-					}
-				]
-			},
-			"dependsOn": []
-		},
-		{
-			"name": "[concat(parameters('workspaceName'), '/03_CRIA_TABELA_SPARK_PARTITION')]",
-			"type": "Microsoft.Synapse/workspaces/notebooks",
-			"apiVersion": "2019-06-01-preview",
-			"properties": {
-				"nbformat": 4,
-				"nbformat_minor": 2,
-				"bigDataPool": {
-					"referenceName": "Cluster1",
-					"type": "BigDataPoolReference"
-				},
-				"sessionProperties": {
-					"driverMemory": "28g",
-					"driverCores": 4,
-					"executorMemory": "28g",
-					"executorCores": 4,
-					"numExecutors": 2,
-					"conf": {
-						"spark.dynamicAllocation.enabled": "false",
-						"spark.dynamicAllocation.minExecutors": "2",
-						"spark.dynamicAllocation.maxExecutors": "2",
-						"spark.autotune.trackingId": "4466c83f-8d90-4a02-a95a-beb078cdc6f6"
-					}
-				},
-				"metadata": {
-					"saveOutput": true,
-					"enableDebugMode": false,
-					"kernelspec": {
-						"name": "synapse_pyspark",
-						"display_name": "Synapse PySpark"
-					},
-					"language_info": {
-						"name": "python"
-					},
-					"a365ComputeOptions": {
-						"id": "/subscriptions/fcdf740b-363d-4924-8de6-a7a7c85fa07f/resourceGroups/trn-synapse-solar-dev/providers/Microsoft.Synapse/workspaces/asa-trn-99/bigDataPools/Cluster1",
-						"name": "Cluster1",
-						"type": "Spark",
-						"endpoint": "https://asa-trn-99.dev.azuresynapse.net/livyApi/versions/2019-11-01-preview/sparkPools/Cluster1",
-						"auth": {
-							"type": "AAD",
-							"authResource": "https://dev.azuresynapse.net"
-						},
-						"sparkVersion": "3.2",
-						"nodeCount": 10,
-						"cores": 4,
-						"memory": 28
-					},
-					"sessionKeepAliveTimeout": 30
-				},
-				"cells": [
-					{
-						"cell_type": "code",
-						"metadata": {
-							"microsoft": {
-								"language": "python"
-							}
-						},
-						"source": [
-							"%%pyspark\r\n",
-							"df = spark.read.load('abfss://treinamento@adlstrnsolar99.dfs.core.windows.net/bronze/carros/CRM.csv', format='csv',\r\n",
-							"## If header exists uncomment line below\r\n",
-							"delimiter=\";\",\r\n",
-							"header=True\r\n",
-							")\r\n",
-							"df.write.mode(\"overwrite\").saveAsTable(\"crm\")"
-						],
-						"outputs": [],
-						"execution_count": 1
-					},
-					{
-						"cell_type": "code",
-						"metadata": {
-							"jupyter": {
-								"source_hidden": false,
-								"outputs_hidden": false
-							},
-							"nteract": {
-								"transient": {
-									"deleting": false
-								}
-							},
-							"microsoft": {
-								"language": "python"
-							}
-						},
-						"source": [
-							"%%pyspark\r\n",
-							"df = spark.sql(\"SELECT * FROM `default`.`crm`\")\r\n",
-							"df.show(10)"
-						],
-						"outputs": [],
-						"execution_count": 17
-					},
-					{
-						"cell_type": "code",
-						"metadata": {
-							"jupyter": {
-								"source_hidden": false,
-								"outputs_hidden": false
-							},
-							"nteract": {
-								"transient": {
-									"deleting": false
-								}
-							},
-							"microsoft": {
-								"language": "python"
-							}
-						},
-						"source": [
-							"%%pyspark\r\n",
-							"##Escreve e salva arquivo Parquet \r\n",
-							"df.write.parquet(\"/bronze/crm/output\")"
-						],
-						"outputs": [],
-						"execution_count": 18
-					},
-					{
-						"cell_type": "code",
-						"metadata": {
-							"jupyter": {
-								"source_hidden": false,
-								"outputs_hidden": false
-							},
-							"nteract": {
-								"transient": {
-									"deleting": false
-								}
-							},
-							"microsoft": {
-								"language": "python"
-							}
-						},
-						"source": [
-							"%%pyspark\r\n",
-							"##Escreve e salva arquivo Parquet \"APPEND\"\r\n",
-							"df.write.mode('append').parquet(\"/bronze/crm/output\")"
-						],
-						"outputs": [],
-						"execution_count": 21
-					},
-					{
-						"cell_type": "code",
-						"metadata": {
-							"jupyter": {
-								"source_hidden": false,
-								"outputs_hidden": false
-							},
-							"nteract": {
-								"transient": {
-									"deleting": false
-								}
-							},
-							"microsoft": {
-								"language": "python"
-							}
-						},
-						"source": [
-							"%%pyspark\r\n",
-							"##Escreve e salva arquivo Parquet \"Overwrite\"\r\n",
-							"df.write.mode('overwrite').parquet(\"/bronze/crm/output\")"
-						],
-						"outputs": [],
-						"execution_count": 22
-					},
-					{
-						"cell_type": "code",
-						"metadata": {
-							"jupyter": {
-								"source_hidden": false,
-								"outputs_hidden": false
-							},
-							"nteract": {
-								"transient": {
-									"deleting": false
-								}
-							},
-							"microsoft": {
-								"language": "python"
-							}
-						},
-						"source": [
-							"%%pyspark\r\n",
-							"##Escreve e salva arquivo Parquet particionado por ano\r\n",
-							"df.write.partitionBy(\"ano\").mode('append').parquet(\"/bronze/crm/output\")"
-						],
-						"outputs": [],
-						"execution_count": 24
-					},
-					{
-						"cell_type": "code",
-						"metadata": {
-							"jupyter": {
-								"source_hidden": false,
-								"outputs_hidden": false
-							},
-							"nteract": {
-								"transient": {
-									"deleting": false
-								}
-							},
-							"microsoft": {
-								"language": "sparksql"
-							}
-						},
-						"source": [
-							"%%sql\r\n",
-							"SELECT\r\n",
-							"   ano\r\n",
-							"FROM\r\n",
-							"    OPENROWSET(\r\n",
-							"        BULK 'https://adlstrnsolar99.dfs.core.windows.net/treinamento/bronze/crm/output/**',\r\n",
-							"        FORMAT = 'PARQUET'\r\n",
-							"    ) AS [result]\r\n",
-							""
-						],
-						"outputs": [],
-						"execution_count": 9
-					}
-				]
-			},
-			"dependsOn": []
-		},
-		{
-			"name": "[concat(parameters('workspaceName'), '/DB Taxi Apache Spark')]",
+			"name": "[concat(parameters('workspaceName'), '/01 DB Taxi Apache Spark')]",
 			"type": "Microsoft.Synapse/workspaces/notebooks",
 			"apiVersion": "2019-06-01-preview",
 			"properties": {
 				"folder": {
-					"name": "Analise TAXI"
+					"name": "02_TAXI_ANALISE"
 				},
 				"nbformat": 4,
 				"nbformat_minor": 2,
@@ -2589,7 +3077,7 @@
 						"spark.dynamicAllocation.enabled": "true",
 						"spark.dynamicAllocation.minExecutors": "1",
 						"spark.dynamicAllocation.maxExecutors": "4",
-						"spark.autotune.trackingId": "53b5fa5c-b5d9-4674-8a06-fd6d6e776a9d"
+						"spark.autotune.trackingId": "a42f4abc-be60-424b-bde0-4538a8782830"
 					}
 				},
 				"metadata": {
@@ -2799,12 +3287,1064 @@
 			"dependsOn": []
 		},
 		{
-			"name": "[concat(parameters('workspaceName'), '/Ler e gravar pandas')]",
+			"name": "[concat(parameters('workspaceName'), '/01_CARGA_SILVER')]",
 			"type": "Microsoft.Synapse/workspaces/notebooks",
 			"apiVersion": "2019-06-01-preview",
 			"properties": {
 				"folder": {
-					"name": "Pandas"
+					"name": "01_POOL_SPARK/CASE 1 VENDAS"
+				},
+				"nbformat": 4,
+				"nbformat_minor": 2,
+				"bigDataPool": {
+					"referenceName": "Cluster1",
+					"type": "BigDataPoolReference"
+				},
+				"sessionProperties": {
+					"driverMemory": "28g",
+					"driverCores": 4,
+					"executorMemory": "28g",
+					"executorCores": 4,
+					"numExecutors": 1,
+					"runAsWorkspaceSystemIdentity": false,
+					"conf": {
+						"spark.dynamicAllocation.enabled": "true",
+						"spark.dynamicAllocation.minExecutors": "1",
+						"spark.dynamicAllocation.maxExecutors": "5",
+						"spark.autotune.trackingId": "613e5165-6350-4428-a835-eb7e76d6a421"
+					}
+				},
+				"metadata": {
+					"saveOutput": true,
+					"enableDebugMode": false,
+					"kernelspec": {
+						"name": "synapse_pyspark",
+						"display_name": "Synapse PySpark"
+					},
+					"language_info": {
+						"name": "python"
+					},
+					"a365ComputeOptions": {
+						"id": "/subscriptions/fcdf740b-363d-4924-8de6-a7a7c85fa07f/resourceGroups/trn-synapse-solar-dev/providers/Microsoft.Synapse/workspaces/asa-trn-99/bigDataPools/Cluster1",
+						"name": "Cluster1",
+						"type": "Spark",
+						"endpoint": "https://asa-trn-99.dev.azuresynapse.net/livyApi/versions/2019-11-01-preview/sparkPools/Cluster1",
+						"auth": {
+							"type": "AAD",
+							"authResource": "https://dev.azuresynapse.net"
+						},
+						"sparkVersion": "3.2",
+						"nodeCount": 10,
+						"cores": 4,
+						"memory": 28
+					},
+					"sessionKeepAliveTimeout": 30
+				},
+				"cells": [
+					{
+						"cell_type": "markdown",
+						"metadata": {
+							"nteract": {
+								"transient": {
+									"deleting": false
+								}
+							}
+						},
+						"source": [
+							"### CRIA DATAFRAMES PARA CARGA CAMADA SILVER"
+						]
+					},
+					{
+						"cell_type": "code",
+						"metadata": {
+							"microsoft": {
+								"language": "python"
+							},
+							"collapsed": false
+						},
+						"source": [
+							"%%pyspark\r\n",
+							"dfcategoria = spark.read.load('abfss://treinamento@adlstrnsolar99.dfs.core.windows.net/bronze/categoria/dbo.CATEGORIA.parquet', format='parquet')\r\n",
+							"dfcidade = spark.read.load('abfss://treinamento@adlstrnsolar99.dfs.core.windows.net/bronze/cidade/dbo.CIDADE.parquet', format='parquet')\r\n",
+							"dfcliente = spark.read.load('abfss://treinamento@adlstrnsolar99.dfs.core.windows.net/bronze/cliente/dbo.CLIENTE.parquet', format='parquet')\r\n",
+							"dfprodutos = spark.read.load('abfss://treinamento@adlstrnsolar99.dfs.core.windows.net/bronze/produtos/dbo.PRODUTOS.parquet', format='parquet')\r\n",
+							"dfunidade = spark.read.load('abfss://treinamento@adlstrnsolar99.dfs.core.windows.net/bronze/unidade/dbo.UNIDADE.parquet', format='parquet')\r\n",
+							"dfvendedores = spark.read.load('abfss://treinamento@adlstrnsolar99.dfs.core.windows.net/bronze/vendedores/dbo.VENDEDORES.parquet', format='parquet')\r\n",
+							"dfvendas = spark.read.load('abfss://treinamento@adlstrnsolar99.dfs.core.windows.net/bronze/vendas/dbo.VENDAS.parquet', format='parquet')\r\n",
+							"dfvenda_itens = spark.read.load('abfss://treinamento@adlstrnsolar99.dfs.core.windows.net/bronze/vendas_itens/dbo.VENDA_ITENS.parquet', format='parquet')\r\n",
+							""
+						],
+						"outputs": [],
+						"execution_count": 8
+					},
+					{
+						"cell_type": "markdown",
+						"metadata": {
+							"nteract": {
+								"transient": {
+									"deleting": false
+								}
+							}
+						},
+						"source": [
+							"#### GRAVANDO PARQUET DE BRONZE PARA SILVER"
+						]
+					},
+					{
+						"cell_type": "code",
+						"metadata": {
+							"jupyter": {
+								"source_hidden": false,
+								"outputs_hidden": false
+							},
+							"nteract": {
+								"transient": {
+									"deleting": false
+								}
+							},
+							"microsoft": {
+								"language": "python"
+							}
+						},
+						"source": [
+							"%%pyspark\r\n",
+							"##Escreve e salva arquivo Parquet\r\n",
+							"dfcategoria.write.mode('overwrite').parquet(\"/silver/categoria\")\r\n",
+							"dfcidade.write.mode('overwrite').parquet(\"/silver/cidade\")\r\n",
+							"dfcliente.write.mode('overwrite').parquet(\"/silver/cliente\")\r\n",
+							"dfprodutos.write.mode('overwrite').parquet(\"/silver/produtos\")\r\n",
+							"dfunidade.write.mode('overwrite').parquet(\"/silver/unidade\")\r\n",
+							"dfvendedores.write.mode('overwrite').parquet(\"/silver/vendedores\")\r\n",
+							"dfvendas.write.mode('overwrite').parquet(\"/silver/vendas\")\r\n",
+							"dfvenda_itens.write.mode('overwrite').parquet(\"/silver/venda_itens\")"
+						],
+						"outputs": [],
+						"execution_count": 9
+					}
+				]
+			},
+			"dependsOn": []
+		},
+		{
+			"name": "[concat(parameters('workspaceName'), '/01_CRIA_DW')]",
+			"type": "Microsoft.Synapse/workspaces/notebooks",
+			"apiVersion": "2019-06-01-preview",
+			"properties": {
+				"folder": {
+					"name": "04_SQL_DEDICADO"
+				},
+				"nbformat": 4,
+				"nbformat_minor": 2,
+				"sessionProperties": {
+					"driverMemory": "28g",
+					"driverCores": 4,
+					"executorMemory": "28g",
+					"executorCores": 4,
+					"numExecutors": 2,
+					"conf": {
+						"spark.dynamicAllocation.enabled": "false",
+						"spark.dynamicAllocation.minExecutors": "2",
+						"spark.dynamicAllocation.maxExecutors": "2",
+						"spark.autotune.trackingId": "0f0f3a96-1cc0-4c77-8d8a-400f6436035a"
+					}
+				},
+				"metadata": {
+					"saveOutput": true,
+					"enableDebugMode": false,
+					"kernelspec": {
+						"name": "synapse_pyspark",
+						"display_name": "python"
+					},
+					"language_info": {
+						"name": "python"
+					},
+					"sessionKeepAliveTimeout": 30
+				},
+				"cells": [
+					{
+						"cell_type": "code",
+						"metadata": {},
+						"source": [
+							""
+						],
+						"outputs": [],
+						"execution_count": null
+					}
+				]
+			},
+			"dependsOn": []
+		},
+		{
+			"name": "[concat(parameters('workspaceName'), '/01_CRIA_TABELA_SPARK')]",
+			"type": "Microsoft.Synapse/workspaces/notebooks",
+			"apiVersion": "2019-06-01-preview",
+			"properties": {
+				"nbformat": 4,
+				"nbformat_minor": 2,
+				"bigDataPool": {
+					"referenceName": "Cluster1",
+					"type": "BigDataPoolReference"
+				},
+				"sessionProperties": {
+					"driverMemory": "28g",
+					"driverCores": 4,
+					"executorMemory": "28g",
+					"executorCores": 4,
+					"numExecutors": 2,
+					"conf": {
+						"spark.dynamicAllocation.enabled": "false",
+						"spark.dynamicAllocation.minExecutors": "2",
+						"spark.dynamicAllocation.maxExecutors": "2",
+						"spark.autotune.trackingId": "65d1ab29-9afa-4742-8d91-ae215750487d"
+					}
+				},
+				"metadata": {
+					"saveOutput": true,
+					"enableDebugMode": false,
+					"kernelspec": {
+						"name": "synapse_pyspark",
+						"display_name": "Synapse PySpark"
+					},
+					"language_info": {
+						"name": "python"
+					},
+					"a365ComputeOptions": {
+						"id": "/subscriptions/fcdf740b-363d-4924-8de6-a7a7c85fa07f/resourceGroups/trn-synapse-solar-dev/providers/Microsoft.Synapse/workspaces/asa-trn-99/bigDataPools/Cluster1",
+						"name": "Cluster1",
+						"type": "Spark",
+						"endpoint": "https://asa-trn-99.dev.azuresynapse.net/livyApi/versions/2019-11-01-preview/sparkPools/Cluster1",
+						"auth": {
+							"type": "AAD",
+							"authResource": "https://dev.azuresynapse.net"
+						},
+						"sparkVersion": "3.2",
+						"nodeCount": 10,
+						"cores": 4,
+						"memory": 28
+					},
+					"sessionKeepAliveTimeout": 30
+				},
+				"cells": [
+					{
+						"cell_type": "code",
+						"metadata": {
+							"microsoft": {
+								"language": "python"
+							}
+						},
+						"source": [
+							"%%pyspark\r\n",
+							"df = spark.read.load('abfss://treinamento@adlstrnsolar99.dfs.core.windows.net/bronze/categoria/*.parquet', format='parquet')\r\n",
+							"df.write.mode(\"overwrite\").saveAsTable(\"default.D_CATEGORIA\")"
+						],
+						"outputs": [],
+						"execution_count": 1
+					},
+					{
+						"cell_type": "code",
+						"metadata": {
+							"jupyter": {
+								"source_hidden": false,
+								"outputs_hidden": false
+							},
+							"nteract": {
+								"transient": {
+									"deleting": false
+								}
+							},
+							"microsoft": {
+								"language": "python"
+							}
+						},
+						"source": [
+							"%%pyspark\r\n",
+							"df = spark.sql(\"SELECT * FROM `default`.`d_categoria`\")\r\n",
+							"df.show(10)"
+						],
+						"outputs": [],
+						"execution_count": 5
+					},
+					{
+						"cell_type": "code",
+						"metadata": {
+							"jupyter": {
+								"source_hidden": false,
+								"outputs_hidden": false
+							},
+							"nteract": {
+								"transient": {
+									"deleting": false
+								}
+							}
+						},
+						"source": [
+							"#LIMPAR CACHE\r\n",
+							"df.unpersist()\r\n",
+							""
+						],
+						"outputs": [],
+						"execution_count": 6
+					}
+				]
+			},
+			"dependsOn": []
+		},
+		{
+			"name": "[concat(parameters('workspaceName'), '/02_CRIA_USER')]",
+			"type": "Microsoft.Synapse/workspaces/notebooks",
+			"apiVersion": "2019-06-01-preview",
+			"properties": {
+				"folder": {
+					"name": "04_SQL_DEDICADO"
+				},
+				"nbformat": 4,
+				"nbformat_minor": 2,
+				"sessionProperties": {
+					"driverMemory": "28g",
+					"driverCores": 4,
+					"executorMemory": "28g",
+					"executorCores": 4,
+					"numExecutors": 2,
+					"conf": {
+						"spark.dynamicAllocation.enabled": "false",
+						"spark.dynamicAllocation.minExecutors": "2",
+						"spark.dynamicAllocation.maxExecutors": "2",
+						"spark.autotune.trackingId": "33c7a0e0-7df4-4baf-859b-bad43c92cadf"
+					}
+				},
+				"metadata": {
+					"saveOutput": true,
+					"enableDebugMode": false,
+					"kernelspec": {
+						"name": "synapse_pyspark",
+						"display_name": "python"
+					},
+					"language_info": {
+						"name": "python"
+					},
+					"sessionKeepAliveTimeout": 30
+				},
+				"cells": [
+					{
+						"cell_type": "code",
+						"metadata": {},
+						"source": [
+							""
+						],
+						"outputs": [],
+						"execution_count": null
+					}
+				]
+			},
+			"dependsOn": []
+		},
+		{
+			"name": "[concat(parameters('workspaceName'), '/02_FATO_VENDAS')]",
+			"type": "Microsoft.Synapse/workspaces/notebooks",
+			"apiVersion": "2019-06-01-preview",
+			"properties": {
+				"folder": {
+					"name": "01_POOL_SPARK/CASE 1 VENDAS"
+				},
+				"nbformat": 4,
+				"nbformat_minor": 2,
+				"bigDataPool": {
+					"referenceName": "Cluster1",
+					"type": "BigDataPoolReference"
+				},
+				"sessionProperties": {
+					"driverMemory": "28g",
+					"driverCores": 4,
+					"executorMemory": "28g",
+					"executorCores": 4,
+					"numExecutors": 1,
+					"conf": {
+						"spark.dynamicAllocation.enabled": "true",
+						"spark.dynamicAllocation.minExecutors": "1",
+						"spark.dynamicAllocation.maxExecutors": "4",
+						"spark.autotune.trackingId": "b30df0c4-7146-49f9-9b5f-178cf870340e"
+					}
+				},
+				"metadata": {
+					"saveOutput": true,
+					"enableDebugMode": false,
+					"kernelspec": {
+						"name": "synapse_pyspark",
+						"display_name": "Synapse PySpark"
+					},
+					"language_info": {
+						"name": "python"
+					},
+					"a365ComputeOptions": {
+						"id": "/subscriptions/fcdf740b-363d-4924-8de6-a7a7c85fa07f/resourceGroups/trn-synapse-solar-dev/providers/Microsoft.Synapse/workspaces/asa-trn-99/bigDataPools/Cluster1",
+						"name": "Cluster1",
+						"type": "Spark",
+						"endpoint": "https://asa-trn-99.dev.azuresynapse.net/livyApi/versions/2019-11-01-preview/sparkPools/Cluster1",
+						"auth": {
+							"type": "AAD",
+							"authResource": "https://dev.azuresynapse.net"
+						},
+						"sparkVersion": "3.2",
+						"nodeCount": 10,
+						"cores": 4,
+						"memory": 28,
+						"automaticScaleJobs": true
+					},
+					"sessionKeepAliveTimeout": 30
+				},
+				"cells": [
+					{
+						"cell_type": "markdown",
+						"metadata": {
+							"nteract": {
+								"transient": {
+									"deleting": false
+								}
+							}
+						},
+						"source": [
+							"#### CARGA FATO PARQUET"
+						]
+					},
+					{
+						"cell_type": "code",
+						"metadata": {
+							"microsoft": {
+								"language": "python"
+							}
+						},
+						"source": [
+							"%%pyspark\r\n",
+							"dfvendas = spark.read.load('abfss://treinamento@adlstrnsolar99.dfs.core.windows.net/silver/vendas/*.parquet', format='parquet')\r\n",
+							"dfvenda_itens = spark.read.load('abfss://treinamento@adlstrnsolar99.dfs.core.windows.net/silver/venda_itens/*.parquet', format='parquet')\r\n",
+							""
+						],
+						"outputs": [],
+						"execution_count": 71
+					},
+					{
+						"cell_type": "code",
+						"metadata": {
+							"jupyter": {
+								"source_hidden": false,
+								"outputs_hidden": false
+							},
+							"nteract": {
+								"transient": {
+									"deleting": false
+								}
+							}
+						},
+						"source": [
+							"dfvendas.show(10)"
+						],
+						"outputs": [],
+						"execution_count": 72
+					},
+					{
+						"cell_type": "code",
+						"metadata": {
+							"jupyter": {
+								"source_hidden": false,
+								"outputs_hidden": false
+							},
+							"nteract": {
+								"transient": {
+									"deleting": false
+								}
+							}
+						},
+						"source": [
+							"dfvenda_itens.show(10)"
+						],
+						"outputs": [],
+						"execution_count": 73
+					},
+					{
+						"cell_type": "markdown",
+						"metadata": {
+							"nteract": {
+								"transient": {
+									"deleting": false
+								}
+							}
+						},
+						"source": [
+							"#### Join Parquet vendas e vendas itens"
+						]
+					},
+					{
+						"cell_type": "code",
+						"metadata": {
+							"jupyter": {
+								"source_hidden": false,
+								"outputs_hidden": false
+							},
+							"nteract": {
+								"transient": {
+									"deleting": false
+								}
+							},
+							"microsoft": {
+								"language": "python"
+							}
+						},
+						"source": [
+							"%%pyspark \r\n",
+							"from pyspark.sql.functions import to_timestamp,date_format\r\n",
+							"from pyspark.sql.functions import col\r\n",
+							"join_fato_vendas = dfvendas.join(dfvenda_itens, dfvendas.NUM_VENDA == dfvenda_itens.NUM_VENDA)\\\r\n",
+							".select(dfvendas.NUM_VENDA,dfvendas.DATA_VENDA,dfvendas.ID_CLIENTE,dfvendas.STATUS,dfvendas.ID_VENDEDOR\\\r\n",
+							",dfvenda_itens.NUM_SEQ,dfvenda_itens.ID_PROD,dfvenda_itens.QTDE,dfvenda_itens.VAL_UNIT\\\r\n",
+							",dfvenda_itens.VAL_TOTAL\\\r\n",
+							"#,date_format('DATA_VENDA','yyyyMMDD').cast('Int').alias('DATA_VENDA_KEY')\\\r\n",
+							"#,date_format('DATA_VENDA','yyyyMMDD').cast('String').alias('DATA_VENDA_CHAVE')\\\r\n",
+							"#,date_format('DATA_VENDA','yyyyMMDD').alias('DATA_VENDA_CHAVE')\\\r\n",
+							",date_format('DATA_VENDA','yyyy').alias('ANO')\\\r\n",
+							",date_format('DATA_VENDA','MM').alias('MES')\\\r\n",
+							")\r\n",
+							"join_fato_vendas.show(10)\r\n",
+							""
+						],
+						"outputs": [],
+						"execution_count": 74
+					},
+					{
+						"cell_type": "code",
+						"metadata": {
+							"jupyter": {
+								"source_hidden": false,
+								"outputs_hidden": false
+							},
+							"nteract": {
+								"transient": {
+									"deleting": false
+								}
+							}
+						},
+						"source": [
+							"#verificando schema dp dataframe\r\n",
+							"join_filtrado.schema"
+						],
+						"outputs": [],
+						"execution_count": 75
+					},
+					{
+						"cell_type": "markdown",
+						"metadata": {
+							"nteract": {
+								"transient": {
+									"deleting": false
+								}
+							}
+						},
+						"source": [
+							"#### FILTRAR VENDAS STATUS \"N\""
+						]
+					},
+					{
+						"cell_type": "code",
+						"metadata": {
+							"jupyter": {
+								"source_hidden": false,
+								"outputs_hidden": false
+							},
+							"nteract": {
+								"transient": {
+									"deleting": false
+								}
+							},
+							"microsoft": {
+								"language": "python"
+							}
+						},
+						"source": [
+							"%%pyspark\r\n",
+							"join_filtrado = join_fato_vendas.filter(join_fato_vendas.STATUS=='N')\r\n",
+							"join_filtrado.show(10)"
+						],
+						"outputs": [],
+						"execution_count": 76
+					},
+					{
+						"cell_type": "markdown",
+						"metadata": {
+							"nteract": {
+								"transient": {
+									"deleting": false
+								}
+							}
+						},
+						"source": [
+							"#### SALVAR ARQUIVO PARQUER PARTICIONADO ANO/MES"
+						]
+					},
+					{
+						"cell_type": "code",
+						"metadata": {
+							"jupyter": {
+								"source_hidden": false,
+								"outputs_hidden": false
+							},
+							"nteract": {
+								"transient": {
+									"deleting": false
+								}
+							},
+							"microsoft": {
+								"language": "python"
+							}
+						},
+						"source": [
+							"%%pyspark\r\n",
+							"##Escreve e salva arquivo Parquet particionado por ano\r\n",
+							"join_filtrado.write.partitionBy('ANO','MES').mode('overwrite').parquet(\"/gold/fato_vendas\")"
+						],
+						"outputs": [],
+						"execution_count": 77
+					},
+					{
+						"cell_type": "markdown",
+						"metadata": {
+							"nteract": {
+								"transient": {
+									"deleting": false
+								}
+							}
+						},
+						"source": [
+							"#### Salvar Tabela Spark"
+						]
+					},
+					{
+						"cell_type": "code",
+						"metadata": {
+							"jupyter": {
+								"source_hidden": false,
+								"outputs_hidden": false
+							},
+							"nteract": {
+								"transient": {
+									"deleting": false
+								}
+							},
+							"microsoft": {
+								"language": "python"
+							}
+						},
+						"source": [
+							"%%pyspark\r\n",
+							"#df = spark.read.load('abfss://treinamento@adlstrnsolar99.dfs.core.windows.net/bronze/categoria/*.parquet', format='parquet')\r\n",
+							"join_fato_vendas.write.mode(\"overwrite\").saveAsTable(\"default.FATO_VENDA\")"
+						],
+						"outputs": [],
+						"execution_count": 78
+					},
+					{
+						"cell_type": "code",
+						"metadata": {
+							"jupyter": {
+								"source_hidden": false,
+								"outputs_hidden": false
+							},
+							"nteract": {
+								"transient": {
+									"deleting": false
+								}
+							},
+							"microsoft": {
+								"language": "sparksql"
+							},
+							"collapsed": false
+						},
+						"source": [
+							"%%sql\r\n",
+							"SELECT * FROM default.FATO_VENDA"
+						],
+						"outputs": [],
+						"execution_count": 79
+					},
+					{
+						"cell_type": "code",
+						"metadata": {
+							"jupyter": {
+								"source_hidden": false,
+								"outputs_hidden": false
+							},
+							"nteract": {
+								"transient": {
+									"deleting": false
+								}
+							}
+						},
+						"source": [
+							""
+						],
+						"outputs": [],
+						"execution_count": null
+					}
+				]
+			},
+			"dependsOn": []
+		},
+		{
+			"name": "[concat(parameters('workspaceName'), '/02_LOAD_CRM')]",
+			"type": "Microsoft.Synapse/workspaces/notebooks",
+			"apiVersion": "2019-06-01-preview",
+			"properties": {
+				"folder": {
+					"name": "01_POOL_SPARK/CASE 2 CRM"
+				},
+				"nbformat": 4,
+				"nbformat_minor": 2,
+				"bigDataPool": {
+					"referenceName": "Cluster1",
+					"type": "BigDataPoolReference"
+				},
+				"sessionProperties": {
+					"driverMemory": "28g",
+					"driverCores": 4,
+					"executorMemory": "28g",
+					"executorCores": 4,
+					"numExecutors": 1,
+					"conf": {
+						"spark.dynamicAllocation.enabled": "true",
+						"spark.dynamicAllocation.minExecutors": "1",
+						"spark.dynamicAllocation.maxExecutors": "4",
+						"spark.autotune.trackingId": "ab3ac17c-95d2-4856-86d2-48a500ca19ae"
+					}
+				},
+				"metadata": {
+					"saveOutput": true,
+					"enableDebugMode": false,
+					"kernelspec": {
+						"name": "synapse_pyspark",
+						"display_name": "Synapse PySpark"
+					},
+					"language_info": {
+						"name": "python"
+					},
+					"a365ComputeOptions": {
+						"id": "/subscriptions/fcdf740b-363d-4924-8de6-a7a7c85fa07f/resourceGroups/trn-synapse-solar-dev/providers/Microsoft.Synapse/workspaces/asa-trn-99/bigDataPools/Cluster1",
+						"name": "Cluster1",
+						"type": "Spark",
+						"endpoint": "https://asa-trn-99.dev.azuresynapse.net/livyApi/versions/2019-11-01-preview/sparkPools/Cluster1",
+						"auth": {
+							"type": "AAD",
+							"authResource": "https://dev.azuresynapse.net"
+						},
+						"sparkVersion": "3.2",
+						"nodeCount": 10,
+						"cores": 4,
+						"memory": 28
+					},
+					"sessionKeepAliveTimeout": 30
+				},
+				"cells": [
+					{
+						"cell_type": "code",
+						"metadata": {
+							"microsoft": {
+								"language": "python"
+							},
+							"collapsed": false
+						},
+						"source": [
+							"%%pyspark\r\n",
+							"df = spark.read.load('abfss://treinamento@adlstrnsolar99.dfs.core.windows.net/bronze/carros/CRM.csv', format='csv',\r\n",
+							"delimiter=\";\",\r\n",
+							"header=True\r\n",
+							")\r\n",
+							"display(df.limit(10))"
+						],
+						"outputs": [],
+						"execution_count": 2
+					}
+				]
+			},
+			"dependsOn": []
+		},
+		{
+			"name": "[concat(parameters('workspaceName'), '/02_spark_create_gold_trip_data_green_agg')]",
+			"type": "Microsoft.Synapse/workspaces/notebooks",
+			"apiVersion": "2019-06-01-preview",
+			"properties": {
+				"folder": {
+					"name": "02_TAXI_ANALISE"
+				},
+				"nbformat": 4,
+				"nbformat_minor": 2,
+				"bigDataPool": {
+					"referenceName": "Cluster1",
+					"type": "BigDataPoolReference"
+				},
+				"sessionProperties": {
+					"driverMemory": "28g",
+					"driverCores": 4,
+					"executorMemory": "28g",
+					"executorCores": 4,
+					"numExecutors": 1,
+					"conf": {
+						"spark.dynamicAllocation.enabled": "true",
+						"spark.dynamicAllocation.minExecutors": "1",
+						"spark.dynamicAllocation.maxExecutors": "4",
+						"spark.autotune.trackingId": "a841ece9-7c7e-4374-a965-f073a38e1bb5"
+					}
+				},
+				"metadata": {
+					"saveOutput": true,
+					"enableDebugMode": false,
+					"kernelspec": {
+						"name": "synapse_pyspark",
+						"display_name": "Synapse PySpark"
+					},
+					"language_info": {
+						"name": "python"
+					},
+					"a365ComputeOptions": {
+						"id": "/subscriptions/fcdf740b-363d-4924-8de6-a7a7c85fa07f/resourceGroups/trn-synapse-solar-dev/providers/Microsoft.Synapse/workspaces/asa-trn-99/bigDataPools/Cluster1",
+						"name": "Cluster1",
+						"type": "Spark",
+						"endpoint": "https://asa-trn-99.dev.azuresynapse.net/livyApi/versions/2019-11-01-preview/sparkPools/Cluster1",
+						"auth": {
+							"type": "AAD",
+							"authResource": "https://dev.azuresynapse.net"
+						},
+						"sparkVersion": "3.2",
+						"nodeCount": 10,
+						"cores": 4,
+						"memory": 28
+					},
+					"sessionKeepAliveTimeout": 30
+				},
+				"cells": [
+					{
+						"cell_type": "markdown",
+						"metadata": {
+							"nteract": {
+								"transient": {
+									"deleting": false
+								}
+							}
+						},
+						"source": [
+							"## Trip Data Aggregation \n",
+							"### Group By Columns\n",
+							"1. year\n",
+							"2. Month\n",
+							"3. Pickup Location ID\n",
+							"4. Drop Off Location ID\n",
+							"\n",
+							"### Aggregated Columns\n",
+							"1. Total Trip Count\n",
+							"2. Total Fare Amount\n",
+							"\n",
+							"### Objetivo no notebook\n",
+							"\n",
+							"Demonstrar a integração entre o  Spark Pool e Serverless SQL Pool\n",
+							"\n",
+							"1. Cria uma tabela agregada in Spark Pool\n",
+							"2. Acesso os dados do Serverless SQL Pool "
+						]
+					},
+					{
+						"cell_type": "code",
+						"metadata": {
+							"jupyter": {
+								"source_hidden": false,
+								"outputs_hidden": false
+							},
+							"nteract": {
+								"transient": {
+									"deleting": false
+								}
+							}
+						},
+						"source": [
+							"#Defina os caminhos da pasta para que possam ser usados mais tarde.\n",
+							"bronze_folder_path = 'abfss://treinamento@adlstrnsolar99.dfs.core.windows.net/bronze'\n",
+							"silver_folder_path = 'abfss://treinamento@adlstrnsolar99.dfs.core.windows.net/silver'\n",
+							"gold_folder_path = 'abfss://treinamento@adlstrnsolar99.dfs.core.windows.net/gold'"
+						],
+						"outputs": [],
+						"execution_count": 1
+					},
+					{
+						"cell_type": "code",
+						"metadata": {
+							"jupyter": {
+								"source_hidden": false,
+								"outputs_hidden": false
+							},
+							"nteract": {
+								"transient": {
+									"deleting": false
+								}
+							}
+						},
+						"source": [
+							"#Defina a spark  config para ser capaz de obter as colunas particionadas ano e mês como strings em vez de inteiros.\n",
+							"spark.conf.set(\"spark.sql.sources.partitionColumnTypeInference.enabled\", \"false\")"
+						],
+						"outputs": [],
+						"execution_count": 2
+					},
+					{
+						"cell_type": "code",
+						"metadata": {
+							"jupyter": {
+								"source_hidden": false,
+								"outputs_hidden": false
+							},
+							"nteract": {
+								"transient": {
+									"deleting": false
+								}
+							},
+							"microsoft": {
+								"language": "sparksql"
+							},
+							"collapsed": false
+						},
+						"source": [
+							"%%sql\n",
+							"\n",
+							"-- Criar banco de dados para o qual vamos gravar os dados\n",
+							"\n",
+							"CREATE DATABASE IF NOT EXISTS nyc_taxi_ldw_spark\n",
+							"LOCATION 'abfss://treinamento@adlstrnsolar99.dfs.core.windows.net/gold';"
+						],
+						"outputs": [],
+						"execution_count": 3
+					},
+					{
+						"cell_type": "code",
+						"metadata": {
+							"jupyter": {
+								"source_hidden": false,
+								"outputs_hidden": false
+							},
+							"nteract": {
+								"transient": {
+									"deleting": false
+								}
+							}
+						},
+						"source": [
+							"# Leia os dados da camada prata prata a serem processados.\n",
+							"trip_data_green_df = spark.read.parquet(f\"{silver_folder_path}/trip_data_green\") "
+						],
+						"outputs": [],
+						"execution_count": 4
+					},
+					{
+						"cell_type": "code",
+						"metadata": {
+							"jupyter": {
+								"source_hidden": false,
+								"outputs_hidden": false
+							},
+							"nteract": {
+								"transient": {
+									"deleting": false
+								}
+							}
+						},
+						"source": [
+							"# Perform the required aggregations\n",
+							"# 1. Total trip count\n",
+							"# 2. Total fare amount\n",
+							"from pyspark.sql.functions import *\n",
+							"\n",
+							"trip_data_green_agg_df = trip_data_green_df \\\n",
+							"                        .groupBy(\"year\", \"month\", \"pu_location_id\", \"do_location_id\") \\\n",
+							"                        .agg(count(lit(1)).alias(\"total_trip_count\"),\n",
+							"                        round(sum(\"fare_amount\"), 2).alias(\"total_fare_amount\"))"
+						],
+						"outputs": [],
+						"execution_count": 5
+					},
+					{
+						"cell_type": "code",
+						"metadata": {
+							"jupyter": {
+								"source_hidden": false,
+								"outputs_hidden": false
+							},
+							"nteract": {
+								"transient": {
+									"deleting": false
+								}
+							}
+						},
+						"source": [
+							"# Write the aggregated data to the gold table for consumption\n",
+							"\n",
+							"trip_data_green_agg_df.write.mode(\"overwrite\").partitionBy(\"year\", \"month\").format(\"parquet\").saveAsTable(\"nyc_taxi_ldw_spark.trip_data_green_agg\")"
+						],
+						"outputs": [],
+						"execution_count": 6
+					}
+				]
+			},
+			"dependsOn": []
+		},
+		{
+			"name": "[concat(parameters('workspaceName'), '/03_CRIA_STG')]",
+			"type": "Microsoft.Synapse/workspaces/notebooks",
+			"apiVersion": "2019-06-01-preview",
+			"properties": {
+				"folder": {
+					"name": "04_SQL_DEDICADO"
+				},
+				"nbformat": 4,
+				"nbformat_minor": 2,
+				"sessionProperties": {
+					"driverMemory": "28g",
+					"driverCores": 4,
+					"executorMemory": "28g",
+					"executorCores": 4,
+					"numExecutors": 2,
+					"conf": {
+						"spark.dynamicAllocation.enabled": "false",
+						"spark.dynamicAllocation.minExecutors": "2",
+						"spark.dynamicAllocation.maxExecutors": "2",
+						"spark.autotune.trackingId": "95314ac0-8f7a-45ca-ad0f-873167fb5277"
+					}
+				},
+				"metadata": {
+					"saveOutput": true,
+					"enableDebugMode": false,
+					"kernelspec": {
+						"name": "synapse_pyspark",
+						"display_name": "python"
+					},
+					"language_info": {
+						"name": "python"
+					},
+					"sessionKeepAliveTimeout": 30
+				},
+				"cells": [
+					{
+						"cell_type": "code",
+						"metadata": {},
+						"source": [
+							""
+						],
+						"outputs": [],
+						"execution_count": null
+					}
+				]
+			},
+			"dependsOn": []
+		},
+		{
+			"name": "[concat(parameters('workspaceName'), '/03_CRIA_TABELA_SPARK_PARTITION')]",
+			"type": "Microsoft.Synapse/workspaces/notebooks",
+			"apiVersion": "2019-06-01-preview",
+			"properties": {
+				"folder": {
+					"name": "01_POOL_SPARK/CASE 2 CRM"
 				},
 				"nbformat": 4,
 				"nbformat_minor": 2,
@@ -2822,7 +4362,671 @@
 						"spark.dynamicAllocation.enabled": "false",
 						"spark.dynamicAllocation.minExecutors": "2",
 						"spark.dynamicAllocation.maxExecutors": "2",
-						"spark.autotune.trackingId": "ae153538-2c1a-420c-ab25-537f4ff7703b"
+						"spark.autotune.trackingId": "a6ce33c9-a213-4938-889a-0d085853eb7d"
+					}
+				},
+				"metadata": {
+					"saveOutput": true,
+					"enableDebugMode": false,
+					"kernelspec": {
+						"name": "synapse_pyspark",
+						"display_name": "Synapse PySpark"
+					},
+					"language_info": {
+						"name": "python"
+					},
+					"a365ComputeOptions": {
+						"id": "/subscriptions/fcdf740b-363d-4924-8de6-a7a7c85fa07f/resourceGroups/trn-synapse-solar-dev/providers/Microsoft.Synapse/workspaces/asa-trn-99/bigDataPools/Cluster1",
+						"name": "Cluster1",
+						"type": "Spark",
+						"endpoint": "https://asa-trn-99.dev.azuresynapse.net/livyApi/versions/2019-11-01-preview/sparkPools/Cluster1",
+						"auth": {
+							"type": "AAD",
+							"authResource": "https://dev.azuresynapse.net"
+						},
+						"sparkVersion": "3.2",
+						"nodeCount": 10,
+						"cores": 4,
+						"memory": 28
+					},
+					"sessionKeepAliveTimeout": 30
+				},
+				"cells": [
+					{
+						"cell_type": "code",
+						"metadata": {
+							"microsoft": {
+								"language": "python"
+							}
+						},
+						"source": [
+							"%%pyspark\r\n",
+							"df = spark.read.load('abfss://treinamento@adlstrnsolar99.dfs.core.windows.net/bronze/carros/CRM.csv', format='csv',\r\n",
+							"## If header exists uncomment line below\r\n",
+							"delimiter=\";\",\r\n",
+							"header=True\r\n",
+							")\r\n",
+							"df.write.mode(\"overwrite\").saveAsTable(\"crm\")"
+						],
+						"outputs": [],
+						"execution_count": 1
+					},
+					{
+						"cell_type": "code",
+						"metadata": {
+							"jupyter": {
+								"source_hidden": false,
+								"outputs_hidden": false
+							},
+							"nteract": {
+								"transient": {
+									"deleting": false
+								}
+							},
+							"microsoft": {
+								"language": "sparksql"
+							},
+							"collapsed": false
+						},
+						"source": [
+							"%%sql\r\n",
+							"SELECT * FROM crm"
+						],
+						"outputs": [],
+						"execution_count": 1
+					},
+					{
+						"cell_type": "code",
+						"metadata": {
+							"jupyter": {
+								"source_hidden": false,
+								"outputs_hidden": false
+							},
+							"nteract": {
+								"transient": {
+									"deleting": false
+								}
+							},
+							"microsoft": {
+								"language": "python"
+							}
+						},
+						"source": [
+							"%%pyspark\r\n",
+							"df = spark.sql(\"SELECT * FROM `default`.`crm`\")\r\n",
+							"df.show(10)"
+						],
+						"outputs": [],
+						"execution_count": 17
+					},
+					{
+						"cell_type": "code",
+						"metadata": {
+							"jupyter": {
+								"source_hidden": false,
+								"outputs_hidden": false
+							},
+							"nteract": {
+								"transient": {
+									"deleting": false
+								}
+							},
+							"microsoft": {
+								"language": "python"
+							}
+						},
+						"source": [
+							"%%pyspark\r\n",
+							"##Escreve e salva arquivo Parquet \r\n",
+							"df.write.parquet(\"/bronze/crm/output\")"
+						],
+						"outputs": [],
+						"execution_count": 18
+					},
+					{
+						"cell_type": "code",
+						"metadata": {
+							"jupyter": {
+								"source_hidden": false,
+								"outputs_hidden": false
+							},
+							"nteract": {
+								"transient": {
+									"deleting": false
+								}
+							},
+							"microsoft": {
+								"language": "python"
+							}
+						},
+						"source": [
+							"%%pyspark\r\n",
+							"##Escreve e salva arquivo Parquet \"APPEND\"\r\n",
+							"df.write.mode('append').parquet(\"/bronze/crm/output\")"
+						],
+						"outputs": [],
+						"execution_count": 21
+					},
+					{
+						"cell_type": "code",
+						"metadata": {
+							"jupyter": {
+								"source_hidden": false,
+								"outputs_hidden": false
+							},
+							"nteract": {
+								"transient": {
+									"deleting": false
+								}
+							},
+							"microsoft": {
+								"language": "python"
+							}
+						},
+						"source": [
+							"%%pyspark\r\n",
+							"##Escreve e salva arquivo Parquet \"Overwrite\"\r\n",
+							"df.write.mode('overwrite').parquet(\"/bronze/crm/output\")"
+						],
+						"outputs": [],
+						"execution_count": 22
+					},
+					{
+						"cell_type": "code",
+						"metadata": {
+							"jupyter": {
+								"source_hidden": false,
+								"outputs_hidden": false
+							},
+							"nteract": {
+								"transient": {
+									"deleting": false
+								}
+							},
+							"microsoft": {
+								"language": "python"
+							}
+						},
+						"source": [
+							"%%pyspark\r\n",
+							"##Escreve e salva arquivo Parquet particionado por ano\r\n",
+							"df.write.partitionBy(\"ano\").mode('append').parquet(\"/bronze/crm/output\")"
+						],
+						"outputs": [],
+						"execution_count": 24
+					},
+					{
+						"cell_type": "code",
+						"metadata": {
+							"jupyter": {
+								"source_hidden": false,
+								"outputs_hidden": false
+							},
+							"nteract": {
+								"transient": {
+									"deleting": false
+								}
+							},
+							"microsoft": {
+								"language": "sparksql"
+							}
+						},
+						"source": [
+							"%%sql\r\n",
+							"SELECT\r\n",
+							"   ano\r\n",
+							"FROM\r\n",
+							"    OPENROWSET(\r\n",
+							"        BULK 'https://adlstrnsolar99.dfs.core.windows.net/treinamento/bronze/crm/output/**',\r\n",
+							"        FORMAT = 'PARQUET'\r\n",
+							"    ) AS [result]\r\n",
+							""
+						],
+						"outputs": [],
+						"execution_count": 9
+					}
+				]
+			},
+			"dependsOn": []
+		},
+		{
+			"name": "[concat(parameters('workspaceName'), '/04_ACESSANDO_EXTERNAL_TABLE')]",
+			"type": "Microsoft.Synapse/workspaces/notebooks",
+			"apiVersion": "2019-06-01-preview",
+			"properties": {
+				"folder": {
+					"name": "01_POOL_SPARK/CASE 2 CRM"
+				},
+				"nbformat": 4,
+				"nbformat_minor": 2,
+				"bigDataPool": {
+					"referenceName": "Cluster1",
+					"type": "BigDataPoolReference"
+				},
+				"sessionProperties": {
+					"driverMemory": "28g",
+					"driverCores": 4,
+					"executorMemory": "28g",
+					"executorCores": 4,
+					"numExecutors": 1,
+					"runAsWorkspaceSystemIdentity": false,
+					"conf": {
+						"spark.dynamicAllocation.enabled": "true",
+						"spark.dynamicAllocation.minExecutors": "1",
+						"spark.dynamicAllocation.maxExecutors": "4",
+						"spark.autotune.trackingId": "d3d7cb9b-b040-4503-8423-69d3f797b6cd"
+					}
+				},
+				"metadata": {
+					"saveOutput": true,
+					"enableDebugMode": false,
+					"kernelspec": {
+						"name": "synapse_sparksql",
+						"display_name": "sql"
+					},
+					"language_info": {
+						"name": "sql"
+					},
+					"a365ComputeOptions": {
+						"id": "/subscriptions/fcdf740b-363d-4924-8de6-a7a7c85fa07f/resourceGroups/trn-synapse-solar-dev/providers/Microsoft.Synapse/workspaces/asa-trn-99/bigDataPools/Cluster1",
+						"name": "Cluster1",
+						"type": "Spark",
+						"endpoint": "https://asa-trn-99.dev.azuresynapse.net/livyApi/versions/2019-11-01-preview/sparkPools/Cluster1",
+						"auth": {
+							"type": "AAD",
+							"authResource": "https://dev.azuresynapse.net"
+						},
+						"sparkVersion": "3.2",
+						"nodeCount": 10,
+						"cores": 4,
+						"memory": 28
+					},
+					"sessionKeepAliveTimeout": 30
+				},
+				"cells": [
+					{
+						"cell_type": "markdown",
+						"metadata": {
+							"nteract": {
+								"transient": {
+									"deleting": false
+								}
+							}
+						},
+						"source": [
+							"#### Acessando external TABLES"
+						]
+					},
+					{
+						"cell_type": "code",
+						"metadata": {
+							"microsoft": {
+								"language": "python"
+							}
+						},
+						"source": [
+							"%%pyspark\n",
+							"df = spark.sql(\"SELECT * FROM lhdw.SILVER.D_CATEGORIA\")\n",
+							"df.show(10)"
+						],
+						"outputs": [],
+						"execution_count": 1
+					}
+				]
+			},
+			"dependsOn": []
+		},
+		{
+			"name": "[concat(parameters('workspaceName'), '/04_CRIA_DIM')]",
+			"type": "Microsoft.Synapse/workspaces/notebooks",
+			"apiVersion": "2019-06-01-preview",
+			"properties": {
+				"folder": {
+					"name": "04_SQL_DEDICADO"
+				},
+				"nbformat": 4,
+				"nbformat_minor": 2,
+				"sessionProperties": {
+					"driverMemory": "28g",
+					"driverCores": 4,
+					"executorMemory": "28g",
+					"executorCores": 4,
+					"numExecutors": 2,
+					"conf": {
+						"spark.dynamicAllocation.enabled": "false",
+						"spark.dynamicAllocation.minExecutors": "2",
+						"spark.dynamicAllocation.maxExecutors": "2",
+						"spark.autotune.trackingId": "b4093044-3903-44c4-8cb2-49ae213d9c19"
+					}
+				},
+				"metadata": {
+					"saveOutput": true,
+					"enableDebugMode": false,
+					"kernelspec": {
+						"name": "synapse_pyspark",
+						"display_name": "python"
+					},
+					"language_info": {
+						"name": "python"
+					},
+					"sessionKeepAliveTimeout": 30
+				},
+				"cells": [
+					{
+						"cell_type": "code",
+						"source": [
+							""
+						],
+						"outputs": [],
+						"execution_count": null
+					}
+				]
+			},
+			"dependsOn": []
+		},
+		{
+			"name": "[concat(parameters('workspaceName'), '/05_ACESSANDO_LH')]",
+			"type": "Microsoft.Synapse/workspaces/notebooks",
+			"apiVersion": "2019-06-01-preview",
+			"properties": {
+				"folder": {
+					"name": "01_POOL_SPARK/CASE 2 CRM"
+				},
+				"nbformat": 4,
+				"nbformat_minor": 2,
+				"bigDataPool": {
+					"referenceName": "Cluster1",
+					"type": "BigDataPoolReference"
+				},
+				"sessionProperties": {
+					"driverMemory": "28g",
+					"driverCores": 4,
+					"executorMemory": "28g",
+					"executorCores": 4,
+					"numExecutors": 2,
+					"conf": {
+						"spark.dynamicAllocation.enabled": "false",
+						"spark.dynamicAllocation.minExecutors": "2",
+						"spark.dynamicAllocation.maxExecutors": "2",
+						"spark.autotune.trackingId": "ea3ddc34-6f9c-4f9e-905c-e64e1c311335"
+					}
+				},
+				"metadata": {
+					"saveOutput": true,
+					"enableDebugMode": false,
+					"kernelspec": {
+						"name": "synapse_pyspark",
+						"display_name": "Synapse PySpark"
+					},
+					"language_info": {
+						"name": "python"
+					},
+					"a365ComputeOptions": {
+						"id": "/subscriptions/fcdf740b-363d-4924-8de6-a7a7c85fa07f/resourceGroups/trn-synapse-solar-dev/providers/Microsoft.Synapse/workspaces/asa-trn-99/bigDataPools/Cluster1",
+						"name": "Cluster1",
+						"type": "Spark",
+						"endpoint": "https://asa-trn-99.dev.azuresynapse.net/livyApi/versions/2019-11-01-preview/sparkPools/Cluster1",
+						"auth": {
+							"type": "AAD",
+							"authResource": "https://dev.azuresynapse.net"
+						},
+						"sparkVersion": "3.2",
+						"nodeCount": 10,
+						"cores": 4,
+						"memory": 28
+					},
+					"sessionKeepAliveTimeout": 30
+				},
+				"cells": [
+					{
+						"cell_type": "code",
+						"metadata": {
+							"microsoft": {
+								"language": "python"
+							}
+						},
+						"source": [
+							"%%pyspark\n",
+							"df = spark.sql(\"SELECT * FROM `default`.`crm`\")\n",
+							"df.show(10)"
+						],
+						"outputs": [],
+						"execution_count": 1
+					}
+				]
+			},
+			"dependsOn": []
+		},
+		{
+			"name": "[concat(parameters('workspaceName'), '/05_CRIA_FATOS')]",
+			"type": "Microsoft.Synapse/workspaces/notebooks",
+			"apiVersion": "2019-06-01-preview",
+			"properties": {
+				"folder": {
+					"name": "04_SQL_DEDICADO"
+				},
+				"nbformat": 4,
+				"nbformat_minor": 2,
+				"sessionProperties": {
+					"driverMemory": "28g",
+					"driverCores": 4,
+					"executorMemory": "28g",
+					"executorCores": 4,
+					"numExecutors": 2,
+					"conf": {
+						"spark.dynamicAllocation.enabled": "false",
+						"spark.dynamicAllocation.minExecutors": "2",
+						"spark.dynamicAllocation.maxExecutors": "2",
+						"spark.autotune.trackingId": "0544e7d0-7f80-4460-aafd-dd3c439c87cc"
+					}
+				},
+				"metadata": {
+					"saveOutput": true,
+					"enableDebugMode": false,
+					"kernelspec": {
+						"name": "synapse_pyspark",
+						"display_name": "python"
+					},
+					"language_info": {
+						"name": "python"
+					},
+					"sessionKeepAliveTimeout": 30
+				},
+				"cells": [
+					{
+						"cell_type": "code",
+						"source": [
+							""
+						],
+						"outputs": [],
+						"execution_count": null
+					}
+				]
+			},
+			"dependsOn": []
+		},
+		{
+			"name": "[concat(parameters('workspaceName'), '/99_CARGA_E_CLASSIFCADOR')]",
+			"type": "Microsoft.Synapse/workspaces/notebooks",
+			"apiVersion": "2019-06-01-preview",
+			"properties": {
+				"folder": {
+					"name": "04_SQL_DEDICADO"
+				},
+				"nbformat": 4,
+				"nbformat_minor": 2,
+				"sessionProperties": {
+					"driverMemory": "28g",
+					"driverCores": 4,
+					"executorMemory": "28g",
+					"executorCores": 4,
+					"numExecutors": 2,
+					"conf": {
+						"spark.dynamicAllocation.enabled": "false",
+						"spark.dynamicAllocation.minExecutors": "2",
+						"spark.dynamicAllocation.maxExecutors": "2",
+						"spark.autotune.trackingId": "42f58469-bf54-41e6-a225-3975d742a1fe"
+					}
+				},
+				"metadata": {
+					"saveOutput": true,
+					"enableDebugMode": false,
+					"kernelspec": {
+						"name": "synapse_pyspark",
+						"display_name": "python"
+					},
+					"language_info": {
+						"name": "python"
+					},
+					"sessionKeepAliveTimeout": 30
+				},
+				"cells": [
+					{
+						"cell_type": "markdown",
+						"metadata": {
+							"nteract": {
+								"transient": {
+									"deleting": false
+								}
+							}
+						},
+						"source": [
+							"#### O script cria um grupo de carga de trabalho chamado CEODemo para reservar recursos exclusivamente para o grupo de carga de trabalho. Por exemplo, um grupo de carga de trabalho com MIN_PERCENTAGE_RESOURCE definido como 10% e REQUEST_MIN_RESOURCE_GRANT_PERCENT definido como 5% tem simultaneidade 2 garantida."
+						]
+					},
+					{
+						"cell_type": "code",
+						"metadata": {
+							"microsoft": {
+								"language": "sparksql"
+							}
+						},
+						"source": [
+							"%%sql\r\n",
+							"\r\n",
+							"IF NOT EXISTS (SELECT * FROM sys.workload_management_workload_groups where name = 'CEODemo')\r\n",
+							"BEGIN\r\n",
+							"    Create WORKLOAD GROUP CEODemo WITH  \r\n",
+							"    ( MIN_PERCENTAGE_RESOURCE = 10        -- integer value\r\n",
+							"    ,REQUEST_MIN_RESOURCE_GRANT_PERCENT = 5 -- integer value\r\n",
+							"    ,CAP_PERCENTAGE_RESOURCE = 100\r\n",
+							"    )\r\n",
+							"END"
+						],
+						"outputs": [],
+						"execution_count": null
+					},
+					{
+						"cell_type": "markdown",
+						"metadata": {
+							"nteract": {
+								"transient": {
+									"deleting": false
+								}
+							}
+						},
+						"source": [
+							"****#### Na janela de consulta, substitua o script pelo seguinte para criar um **classificador** de carga de trabalho chamado CEODreamDemo que atribui um grupo de carga de trabalho e a importância a solicitações de entrada:"
+						]
+					},
+					{
+						"cell_type": "code",
+						"metadata": {
+							"jupyter": {
+								"source_hidden": false,
+								"outputs_hidden": false
+							},
+							"nteract": {
+								"transient": {
+									"deleting": false
+								}
+							},
+							"microsoft": {
+								"language": "sparksql"
+							}
+						},
+						"source": [
+							"%%sql\r\n",
+							"IF NOT EXISTS (SELECT * FROM sys.workload_management_workload_classifiers where  name = 'CEODreamDemo')\r\n",
+							"BEGIN\r\n",
+							"    Create Workload Classifier CEODreamDemo with\r\n",
+							"    ( Workload_Group ='CEODemo',MemberName='asa.sql.workload02',IMPORTANCE = BELOW_NORMAL);\r\n",
+							"END"
+						],
+						"outputs": [],
+						"execution_count": null
+					},
+					{
+						"cell_type": "markdown",
+						"metadata": {
+							"nteract": {
+								"transient": {
+									"deleting": false
+								}
+							}
+						},
+						"source": [
+							"\r\n",
+							"#### Na janela de consulta, substitua o script pelo seguinte para confirmar que não há nenhuma consulta ativa em execução por asa.sql.workload02 (pode haver consultas suspensas):"
+						]
+					},
+					{
+						"cell_type": "code",
+						"metadata": {
+							"jupyter": {
+								"source_hidden": false,
+								"outputs_hidden": false
+							},
+							"nteract": {
+								"transient": {
+									"deleting": false
+								}
+							},
+							"microsoft": {
+								"language": "sparksql"
+							}
+						},
+						"source": [
+							"%%sql\r\n",
+							"SELECT s.login_name, r.[Status], r.Importance, submit_time,\r\n",
+							"start_time ,s.session_id FROM sys.dm_pdw_exec_sessions s\r\n",
+							"JOIN sys.dm_pdw_exec_requests r ON s.session_id = r.session_id\r\n",
+							"WHERE s.login_name IN ('asa.sql.workload02') and Importance\r\n",
+							"is not NULL AND r.[status] in ('Running','Suspended')\r\n",
+							"ORDER BY submit_time, status"
+						],
+						"outputs": [],
+						"execution_count": null
+					}
+				]
+			},
+			"dependsOn": []
+		},
+		{
+			"name": "[concat(parameters('workspaceName'), '/Ler e gravar pandas')]",
+			"type": "Microsoft.Synapse/workspaces/notebooks",
+			"apiVersion": "2019-06-01-preview",
+			"properties": {
+				"folder": {
+					"name": "03_PANDAS"
+				},
+				"nbformat": 4,
+				"nbformat_minor": 2,
+				"bigDataPool": {
+					"referenceName": "Cluster1",
+					"type": "BigDataPoolReference"
+				},
+				"sessionProperties": {
+					"driverMemory": "28g",
+					"driverCores": 4,
+					"executorMemory": "28g",
+					"executorCores": 4,
+					"numExecutors": 2,
+					"conf": {
+						"spark.dynamicAllocation.enabled": "false",
+						"spark.dynamicAllocation.minExecutors": "2",
+						"spark.dynamicAllocation.maxExecutors": "2",
+						"spark.autotune.trackingId": "7deba9bb-d741-491f-9d3e-02c0b4763fb7"
 					}
 				},
 				"metadata": {
@@ -2969,147 +5173,6 @@
 			"dependsOn": []
 		},
 		{
-			"name": "[concat(parameters('workspaceName'), '/Notebook 1')]",
-			"type": "Microsoft.Synapse/workspaces/notebooks",
-			"apiVersion": "2019-06-01-preview",
-			"properties": {
-				"nbformat": 4,
-				"nbformat_minor": 2,
-				"bigDataPool": {
-					"referenceName": "Cluster1",
-					"type": "BigDataPoolReference"
-				},
-				"sessionProperties": {
-					"driverMemory": "28g",
-					"driverCores": 4,
-					"executorMemory": "28g",
-					"executorCores": 4,
-					"numExecutors": 1,
-					"runAsWorkspaceSystemIdentity": false,
-					"conf": {
-						"spark.dynamicAllocation.enabled": "true",
-						"spark.dynamicAllocation.minExecutors": "1",
-						"spark.dynamicAllocation.maxExecutors": "4",
-						"spark.autotune.trackingId": "9db2d607-14ae-40b9-9676-da58199d162c"
-					}
-				},
-				"metadata": {
-					"saveOutput": true,
-					"enableDebugMode": false,
-					"kernelspec": {
-						"name": "synapse_pyspark",
-						"display_name": "Synapse PySpark"
-					},
-					"language_info": {
-						"name": "sql"
-					},
-					"a365ComputeOptions": {
-						"id": "/subscriptions/fcdf740b-363d-4924-8de6-a7a7c85fa07f/resourceGroups/trn-synapse-solar-dev/providers/Microsoft.Synapse/workspaces/asa-trn-99/bigDataPools/Cluster1",
-						"name": "Cluster1",
-						"type": "Spark",
-						"endpoint": "https://asa-trn-99.dev.azuresynapse.net/livyApi/versions/2019-11-01-preview/sparkPools/Cluster1",
-						"auth": {
-							"type": "AAD",
-							"authResource": "https://dev.azuresynapse.net"
-						},
-						"sparkVersion": "3.2",
-						"nodeCount": 10,
-						"cores": 4,
-						"memory": 28
-					},
-					"sessionKeepAliveTimeout": 30
-				},
-				"cells": [
-					{
-						"cell_type": "code",
-						"metadata": {
-							"microsoft": {
-								"language": "python"
-							}
-						},
-						"source": [
-							"%%pyspark\n",
-							"df = spark.sql(\"SELECT * FROM lhdw.SILVER.D_CATEGORIA\")\n",
-							"# df.show(10)"
-						],
-						"outputs": [],
-						"execution_count": 6
-					}
-				]
-			},
-			"dependsOn": []
-		},
-		{
-			"name": "[concat(parameters('workspaceName'), '/Notebook 2')]",
-			"type": "Microsoft.Synapse/workspaces/notebooks",
-			"apiVersion": "2019-06-01-preview",
-			"properties": {
-				"nbformat": 4,
-				"nbformat_minor": 2,
-				"bigDataPool": {
-					"referenceName": "Cluster1",
-					"type": "BigDataPoolReference"
-				},
-				"sessionProperties": {
-					"driverMemory": "28g",
-					"driverCores": 4,
-					"executorMemory": "28g",
-					"executorCores": 4,
-					"numExecutors": 2,
-					"conf": {
-						"spark.dynamicAllocation.enabled": "false",
-						"spark.dynamicAllocation.minExecutors": "2",
-						"spark.dynamicAllocation.maxExecutors": "2",
-						"spark.autotune.trackingId": "4f646008-3a06-4ad6-a20c-dc4fb8e2e2f4"
-					}
-				},
-				"metadata": {
-					"saveOutput": true,
-					"enableDebugMode": false,
-					"kernelspec": {
-						"name": "synapse_pyspark",
-						"display_name": "Synapse PySpark"
-					},
-					"language_info": {
-						"name": "python"
-					},
-					"a365ComputeOptions": {
-						"id": "/subscriptions/fcdf740b-363d-4924-8de6-a7a7c85fa07f/resourceGroups/trn-synapse-solar-dev/providers/Microsoft.Synapse/workspaces/asa-trn-99/bigDataPools/Cluster1",
-						"name": "Cluster1",
-						"type": "Spark",
-						"endpoint": "https://asa-trn-99.dev.azuresynapse.net/livyApi/versions/2019-11-01-preview/sparkPools/Cluster1",
-						"auth": {
-							"type": "AAD",
-							"authResource": "https://dev.azuresynapse.net"
-						},
-						"sparkVersion": "3.2",
-						"nodeCount": 10,
-						"cores": 4,
-						"memory": 28
-					},
-					"sessionKeepAliveTimeout": 30
-				},
-				"cells": [
-					{
-						"cell_type": "code",
-						"metadata": {
-							"microsoft": {
-								"language": "python"
-							}
-						},
-						"source": [
-							"%%pyspark\n",
-							"df = spark.sql(\"SELECT * FROM `default`.`crm`\")\n",
-							"df.show(10)"
-						],
-						"outputs": [],
-						"execution_count": 1
-					}
-				]
-			},
-			"dependsOn": []
-		},
-		{
 			"name": "[concat(parameters('workspaceName'), '/Cluster1')]",
 			"type": "Microsoft.Synapse/workspaces/bigDataPools",
 			"apiVersion": "2019-06-01-preview",
@@ -3135,19 +5198,334 @@
 			"location": "southcentralus"
 		},
 		{
-			"name": "[concat(parameters('workspaceName'), '/SQL script 4')]",
+			"name": "[concat(parameters('workspaceName'), '/dw01')]",
+			"type": "Microsoft.Synapse/workspaces/sqlPools",
+			"apiVersion": "2019-06-01-preview",
+			"properties": {
+				"collation": "SQL_Latin1_General_CP1_CI_AS",
+				"maxSizeBytes": 263882790666240,
+				"annotations": []
+			},
+			"dependsOn": [],
+			"location": "southcentralus"
+		},
+		{
+			"name": "[concat(parameters('workspaceName'), '/14_CLIENTE_SCD')]",
 			"type": "Microsoft.Synapse/workspaces/sqlscripts",
 			"apiVersion": "2019-06-01-preview",
 			"properties": {
+				"folder": {
+					"name": "02_SQL_DEDICADO"
+				},
 				"content": {
-					"query": "-- This is auto-generated code\nSELECT\n    TOP 100 *\nFROM\n    OPENROWSET(\n        BULK 'https://adlstrnsolar99.dfs.core.windows.net/treinamento/bronze/crmate1970.parquet',\n        FORMAT = 'PARQUET'\n    ) AS [result]\r\n",
+					"query": "--SQL DEDIDCADO\nCREATE TABLE dbo.SILVER_CLIENTE_SCD\n\t(\n\t [ID_CLIENTE] int,\n\t [NOME_CLIENTE] nvarchar(4000),\n\t [ENDERECO] nvarchar(4000),\n\t [NUMERO] nvarchar(4000),\n\t [ID_CIDADE] int,\n\t [CEP] nvarchar(4000),\n     [InsertedDate] [datetime] NOT NULL,\n     [ModifiedDate] [datetime] NOT NULL,\n     [HashKey] [char](64)\n\t)\nWITH\n\t(\n\tDISTRIBUTION = REPLICATE,\n\t CLUSTERED COLUMNSTORE INDEX\n\t -- HEAP\n\t)\nGO",
 					"metadata": {
 						"language": "sql"
 					},
 					"currentConnection": {
-						"name": "master",
-						"type": "SqlOnDemand"
+						"databaseName": "dw01",
+						"poolName": "dw01"
+					},
+					"resultLimit": 5000
+				},
+				"type": "SqlQuery"
+			},
+			"dependsOn": []
+		},
+		{
+			"name": "[concat(parameters('workspaceName'), '/LOAD CLIENTE SCD')]",
+			"type": "Microsoft.Synapse/workspaces/pipelines",
+			"apiVersion": "2019-06-01-preview",
+			"properties": {
+				"activities": [
+					{
+						"name": "SCD CLIENTE",
+						"type": "ExecuteDataFlow",
+						"dependsOn": [],
+						"policy": {
+							"timeout": "0.12:00:00",
+							"retry": 0,
+							"retryIntervalInSeconds": 30,
+							"secureOutput": false,
+							"secureInput": false
+						},
+						"userProperties": [],
+						"typeProperties": {
+							"dataflow": {
+								"referenceName": "UPDATE_CLIENTE",
+								"type": "DataFlowReference",
+								"parameters": {},
+								"datasetParameters": {
+									"SILVERCLIENTE": {},
+									"dimCLIENTESCD": {},
+									"sink1": {}
+								},
+								"linkedServiceParameters": {}
+							},
+							"staging": {
+								"linkedService": {
+									"referenceName": "asa-trn-99-WorkspaceDefaultStorage",
+									"type": "LinkedServiceReference"
+								},
+								"folderPath": "treinamento/staging"
+							},
+							"compute": {
+								"coreCount": 8,
+								"computeType": "General"
+							},
+							"traceLevel": "Fine"
+						}
 					}
+				],
+				"policy": {
+					"elapsedTimeMetric": {},
+					"cancelAfter": {}
+				},
+				"annotations": []
+			},
+			"dependsOn": [
+				"[concat(variables('workspaceId'), '/integrationRuntimes/AutoResolveIntegrationRuntime')]",
+				"[concat(variables('workspaceId'), '/dataflows/UPDATE_CLIENTE')]",
+				"[concat(variables('workspaceId'), '/linkedServices/asa-trn-99-WorkspaceDefaultStorage')]"
+			]
+		},
+		{
+			"name": "[concat(parameters('workspaceName'), '/UPDATE_CLIENTE')]",
+			"type": "Microsoft.Synapse/workspaces/dataflows",
+			"apiVersion": "2019-06-01-preview",
+			"properties": {
+				"type": "MappingDataFlow",
+				"typeProperties": {
+					"sources": [
+						{
+							"dataset": {
+								"referenceName": "CLIENTE",
+								"type": "DatasetReference"
+							},
+							"name": "SILVERCLIENTE"
+						},
+						{
+							"dataset": {
+								"referenceName": "CLIENTEscd",
+								"type": "DatasetReference"
+							},
+							"name": "dimCLIENTESCD"
+						}
+					],
+					"sinks": [
+						{
+							"dataset": {
+								"referenceName": "CLIENTEscd",
+								"type": "DatasetReference"
+							},
+							"name": "sink1"
+						}
+					],
+					"transformations": [
+						{
+							"name": "createclientehash"
+						},
+						{
+							"name": "exists1"
+						},
+						{
+							"name": "lookup1"
+						},
+						{
+							"name": "SetDatas"
+						},
+						{
+							"name": "alterRow1"
+						}
+					],
+					"scriptLines": [
+						"source(output(",
+						"          ID_CLIENTE as integer,",
+						"          NOME_CLIENTE as string,",
+						"          ENDERECO as string,",
+						"          NUMERO as string,",
+						"          ID_CIDADE as integer,",
+						"          CEP as string",
+						"     ),",
+						"     allowSchemaDrift: true,",
+						"     validateSchema: false,",
+						"     isolationLevel: 'READ_UNCOMMITTED',",
+						"     format: 'table') ~> SILVERCLIENTE",
+						"source(output(",
+						"          ID_CLIENTE as integer,",
+						"          NOME_CLIENTE as string,",
+						"          ENDERECO as string,",
+						"          NUMERO as string,",
+						"          ID_CIDADE as integer,",
+						"          CEP as string,",
+						"          InsertedDate as timestamp,",
+						"          ModifiedDate as timestamp,",
+						"          HashKey as string",
+						"     ),",
+						"     allowSchemaDrift: true,",
+						"     validateSchema: false,",
+						"     isolationLevel: 'READ_UNCOMMITTED',",
+						"     format: 'table',",
+						"     staged: true) ~> dimCLIENTESCD",
+						"SILVERCLIENTE derive(HashKey = sha2(256,\r",
+						"iifNull(toString(ID_CLIENTE),'')+\r",
+						"iifNull(NOME_CLIENTE,'')+\r",
+						"iifNull(ENDERECO,'')+\r",
+						"iifNull(NUMERO,'')+\r",
+						"iifNull(toString(ID_CIDADE),'')+\r",
+						"iifNull(toString(CEP),'')\r",
+						")) ~> createclientehash",
+						"createclientehash, dimCLIENTESCD exists(createclientehash@HashKey == dimCLIENTESCD@HashKey,",
+						"     negate:true,",
+						"     broadcast: 'auto')~> exists1",
+						"exists1, dimCLIENTESCD lookup(SILVERCLIENTE@ID_CLIENTE == dimCLIENTESCD@ID_CLIENTE,",
+						"     multiple: false,",
+						"     pickup: 'any',",
+						"     broadcast: 'auto')~> lookup1",
+						"lookup1 derive(InsertedDate = iif(isNull(InsertedDate), currentTimestamp(), InsertedDate),",
+						"          ModifiedDate = currentTimestamp()) ~> SetDatas",
+						"SetDatas alterRow(upsertIf(true())) ~> alterRow1",
+						"alterRow1 sink(allowSchemaDrift: true,",
+						"     validateSchema: false,",
+						"     input(",
+						"          ID_CLIENTE as integer,",
+						"          NOME_CLIENTE as string,",
+						"          ENDERECO as string,",
+						"          NUMERO as string,",
+						"          ID_CIDADE as integer,",
+						"          CEP as string,",
+						"          InsertedDate as timestamp,",
+						"          ModifiedDate as timestamp,",
+						"          HashKey as string",
+						"     ),",
+						"     deletable:false,",
+						"     insertable:false,",
+						"     updateable:false,",
+						"     upsertable:true,",
+						"     keys:['ID_CLIENTE'],",
+						"     format: 'table',",
+						"     staged: true,",
+						"     allowCopyCommand: true,",
+						"     skipDuplicateMapInputs: true,",
+						"     skipDuplicateMapOutputs: true,",
+						"     errorHandlingOption: 'stopOnFirstError',",
+						"     mapColumn(",
+						"          ID_CLIENTE = SILVERCLIENTE@ID_CLIENTE,",
+						"          NOME_CLIENTE = SILVERCLIENTE@NOME_CLIENTE,",
+						"          ENDERECO = SILVERCLIENTE@ENDERECO,",
+						"          NUMERO = SILVERCLIENTE@NUMERO,",
+						"          ID_CIDADE = SILVERCLIENTE@ID_CIDADE,",
+						"          CEP = SILVERCLIENTE@CEP,",
+						"          InsertedDate,",
+						"          ModifiedDate,",
+						"          HashKey = createclientehash@HashKey",
+						"     )) ~> sink1"
+					]
+				}
+			},
+			"dependsOn": [
+				"[concat(variables('workspaceId'), '/datasets/CLIENTE')]",
+				"[concat(variables('workspaceId'), '/datasets/CLIENTEscd')]"
+			]
+		},
+		{
+			"name": "[concat(parameters('workspaceName'), '/AzureSynapseAnalytics2')]",
+			"type": "Microsoft.Synapse/workspaces/linkedServices",
+			"apiVersion": "2019-06-01-preview",
+			"properties": {
+				"annotations": [],
+				"type": "AzureSqlDW",
+				"typeProperties": {
+					"connectionString": "[parameters('AzureSynapseAnalytics2_connectionString')]"
+				},
+				"connectVia": {
+					"referenceName": "AutoResolveIntegrationRuntime",
+					"type": "IntegrationRuntimeReference"
+				}
+			},
+			"dependsOn": [
+				"[concat(variables('workspaceId'), '/integrationRuntimes/AutoResolveIntegrationRuntime')]"
+			]
+		},
+		{
+			"name": "[concat(parameters('workspaceName'), '/CLIENTEscd')]",
+			"type": "Microsoft.Synapse/workspaces/datasets",
+			"apiVersion": "2019-06-01-preview",
+			"properties": {
+				"linkedServiceName": {
+					"referenceName": "AzureSynapseAnalytics2",
+					"type": "LinkedServiceReference"
+				},
+				"annotations": [],
+				"type": "AzureSqlDWTable",
+				"schema": [
+					{
+						"name": "ID_CLIENTE",
+						"type": "int",
+						"precision": 10
+					},
+					{
+						"name": "NOME_CLIENTE",
+						"type": "nvarchar"
+					},
+					{
+						"name": "ENDERECO",
+						"type": "nvarchar"
+					},
+					{
+						"name": "NUMERO",
+						"type": "nvarchar"
+					},
+					{
+						"name": "ID_CIDADE",
+						"type": "int",
+						"precision": 10
+					},
+					{
+						"name": "CEP",
+						"type": "nvarchar"
+					},
+					{
+						"name": "InsertedDate",
+						"type": "datetime",
+						"precision": 23,
+						"scale": 3
+					},
+					{
+						"name": "ModifiedDate",
+						"type": "datetime",
+						"precision": 23,
+						"scale": 3
+					},
+					{
+						"name": "HashKey",
+						"type": "char"
+					}
+				],
+				"typeProperties": {
+					"schema": "dbo",
+					"table": "SILVER_CLIENTE_SCD"
+				}
+			},
+			"dependsOn": [
+				"[concat(variables('workspaceId'), '/linkedServices/AzureSynapseAnalytics2')]"
+			]
+		},
+		{
+			"name": "[concat(parameters('workspaceName'), '/SQL script 1')]",
+			"type": "Microsoft.Synapse/workspaces/sqlscripts",
+			"apiVersion": "2019-06-01-preview",
+			"properties": {
+				"content": {
+					"query": "SELECT TOP (100) [ID_CLIENTE]\n,[NOME_CLIENTE]\n,[ENDERECO]\n,[NUMERO]\n,[ID_CIDADE]\n,[CEP]\n,[InsertedDate]\n,[ModifiedDate]\n,[HashKey]\n FROM [dbo].[SILVER_CLIENTE_SCD]",
+					"metadata": {
+						"language": "sql"
+					},
+					"currentConnection": {
+						"databaseName": "dw01",
+						"poolName": "dw01"
+					},
+					"resultLimit": 5000
 				},
 				"type": "SqlQuery"
 			},
