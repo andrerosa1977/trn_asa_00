@@ -20,7 +20,7 @@
 				"spark.dynamicAllocation.enabled": "true",
 				"spark.dynamicAllocation.minExecutors": "1",
 				"spark.dynamicAllocation.maxExecutors": "4",
-				"spark.autotune.trackingId": "4d7d7ff6-2d21-4f8c-ab8b-db6e2092eaa9"
+				"spark.autotune.trackingId": "fb39d81b-2f3e-4872-bb0c-211e21e55289"
 			}
 		},
 		"metadata": {
@@ -77,7 +77,7 @@
 					"dfvenda_itens = spark.read.load('abfss://treinamento@adlstrnsolar99.dfs.core.windows.net/silver/venda_itens/*.parquet', format='parquet')\r\n",
 					""
 				],
-				"execution_count": 44
+				"execution_count": 71
 			},
 			{
 				"cell_type": "code",
@@ -95,7 +95,7 @@
 				"source": [
 					"dfvendas.show(10)"
 				],
-				"execution_count": 45
+				"execution_count": 72
 			},
 			{
 				"cell_type": "code",
@@ -113,7 +113,7 @@
 				"source": [
 					"dfvenda_itens.show(10)"
 				],
-				"execution_count": 46
+				"execution_count": 73
 			},
 			{
 				"cell_type": "markdown",
@@ -153,14 +153,15 @@
 					",dfvenda_itens.NUM_SEQ,dfvenda_itens.ID_PROD,dfvenda_itens.QTDE,dfvenda_itens.VAL_UNIT\\\r\n",
 					",dfvenda_itens.VAL_TOTAL\\\r\n",
 					"#,date_format('DATA_VENDA','yyyyMMDD').cast('Int').alias('DATA_VENDA_KEY')\\\r\n",
-					",date_format('DATA_VENDA','yyyyMMDD').alias('DATA_VENDA_KEY')\\\r\n",
+					"#,date_format('DATA_VENDA','yyyyMMDD').cast('String').alias('DATA_VENDA_CHAVE')\\\r\n",
+					"#,date_format('DATA_VENDA','yyyyMMDD').alias('DATA_VENDA_CHAVE')\\\r\n",
 					",date_format('DATA_VENDA','yyyy').alias('ANO')\\\r\n",
 					",date_format('DATA_VENDA','MM').alias('MES')\\\r\n",
 					")\r\n",
 					"join_fato_vendas.show(10)\r\n",
 					""
 				],
-				"execution_count": 47
+				"execution_count": 74
 			},
 			{
 				"cell_type": "code",
@@ -179,7 +180,7 @@
 					"#verificando schema dp dataframe\r\n",
 					"join_filtrado.schema"
 				],
-				"execution_count": 48
+				"execution_count": 75
 			},
 			{
 				"cell_type": "markdown",
@@ -215,7 +216,7 @@
 					"join_filtrado = join_fato_vendas.filter(join_fato_vendas.STATUS=='N')\r\n",
 					"join_filtrado.show(10)"
 				],
-				"execution_count": 49
+				"execution_count": 76
 			},
 			{
 				"cell_type": "markdown",
@@ -251,7 +252,7 @@
 					"##Escreve e salva arquivo Parquet particionado por ano\r\n",
 					"join_filtrado.write.partitionBy('ANO','MES').mode('overwrite').parquet(\"/gold/fato_vendas\")"
 				],
-				"execution_count": 50
+				"execution_count": 77
 			},
 			{
 				"cell_type": "markdown",
@@ -287,7 +288,7 @@
 					"#df = spark.read.load('abfss://treinamento@adlstrnsolar99.dfs.core.windows.net/bronze/categoria/*.parquet', format='parquet')\r\n",
 					"join_fato_vendas.write.mode(\"overwrite\").saveAsTable(\"default.FATO_VENDA\")"
 				],
-				"execution_count": null
+				"execution_count": 78
 			},
 			{
 				"cell_type": "code",
@@ -310,7 +311,7 @@
 					"%%sql\r\n",
 					"SELECT * FROM default.FATO_VENDA"
 				],
-				"execution_count": null
+				"execution_count": 79
 			},
 			{
 				"cell_type": "code",
