@@ -1,0 +1,17 @@
+{
+	"name": "SQL script 1",
+	"properties": {
+		"content": {
+			"query": "SELECT TOP (100) [NUM_VENDA]\n,[DATA_VENDA]\n,[ID_CLIENTE]\n,[STATUS]\n,[ID_VENDEDOR]\n,[NUM_SEQ]\n,[ID_PROD]\n,[QTDE]\n,[VAL_UNIT]\n,[VAL_TOTAL]\n,[ANO]\n,[MES]\n FROM [default].[dbo].[fato_venda]",
+			"metadata": {
+				"language": "sql"
+			},
+			"currentConnection": {
+				"databaseName": "default",
+				"poolName": "Built-in"
+			},
+			"resultLimit": 5000
+		},
+		"type": "SqlQuery"
+	}
+}
