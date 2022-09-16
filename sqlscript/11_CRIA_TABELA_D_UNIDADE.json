@@ -5,7 +5,7 @@
 			"name": "02_SQL_DEDICADO"
 		},
 		"content": {
-			"query": "IF NOT EXISTS (SELECT * FROM sys.objects O JOIN sys.schemas S ON O.schema_id = S.schema_id WHERE O.NAME = 'D_UNIDADE' AND O.TYPE = 'U' AND S.NAME = 'SILVER')\nCREATE TABLE SILVER.D_UNIDADE\n\t(\n\t [ID_UNIDADE] nvarchar(4000),\n\t [DESC_UNIDADE] nvarchar(4000)\n\t)\nWITH\n\t(\n\tDISTRIBUTION = ROUND_ROBIN,\n\t CLUSTERED COLUMNSTORE INDEX\n\t -- HEAP\n\t)\nGO\n\n--Uncomment the 4 lines below to create a stored procedure for data pipeline orchestration​\n--CREATE PROC bulk_load_D_UNIDADE\n--AS\n--BEGIN\nCOPY INTO SILVER.D_UNIDADE\n(ID_UNIDADE 1, DESC_UNIDADE 2)\nFROM 'https://adlstrnsolar99.dfs.core.windows.net/treinamento/silver/unidade'\nWITH\n(\n\tFILE_TYPE = 'PARQUET'\n\t,MAXERRORS = 0\n)\n--END\nGO\n\nSELECT TOP 100 * FROM SILVER.D_UNIDADE\nGO",
+			"query": "IF NOT EXISTS (SELECT * FROM sys.objects O JOIN sys.schemas S ON O.schema_id = S.schema_id WHERE O.NAME = 'D_UNIDADE' AND O.TYPE = 'U' AND S.NAME = 'SILVER')\nCREATE TABLE SILVER.D_UNIDADE\n\t(\n\t [ID_UNIDADE] nvarchar(4000),\n\t [DESC_UNIDADE] nvarchar(4000)\n\t)\nWITH\n\t(\n\tDISTRIBUTION = REPLICATE,\n\t CLUSTERED COLUMNSTORE INDEX\n\t -- HEAP\n\t)\nGO\n\n--Uncomment the 4 lines below to create a stored procedure for data pipeline orchestration​\n--CREATE PROC bulk_load_D_UNIDADE\n--AS\n--BEGIN\nCOPY INTO SILVER.D_UNIDADE\n(ID_UNIDADE 1, DESC_UNIDADE 2)\nFROM 'https://adlstrnsolar99.dfs.core.windows.net/treinamento/silver/unidade'\nWITH\n(\n\tFILE_TYPE = 'PARQUET'\n\t,MAXERRORS = 0\n)\n--END\nGO\n\nSELECT TOP 100 * FROM SILVER.D_UNIDADE\nGO",
 			"metadata": {
 				"language": "sql"
 			},
