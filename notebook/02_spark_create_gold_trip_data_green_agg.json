@@ -20,7 +20,7 @@
 				"spark.dynamicAllocation.enabled": "true",
 				"spark.dynamicAllocation.minExecutors": "1",
 				"spark.dynamicAllocation.maxExecutors": "4",
-				"spark.autotune.trackingId": "3895bb70-adc1-4408-9815-88a787eca07c"
+				"spark.autotune.trackingId": "8fe76a1c-1b20-4101-af14-a5f6d8253d99"
 			}
 		},
 		"metadata": {
@@ -99,7 +99,7 @@
 					"silver_folder_path = 'abfss://treinamento@adlstrnsolar99.dfs.core.windows.net/silver'\n",
 					"gold_folder_path = 'abfss://treinamento@adlstrnsolar99.dfs.core.windows.net/gold'"
 				],
-				"execution_count": 2
+				"execution_count": 3
 			},
 			{
 				"cell_type": "code",
