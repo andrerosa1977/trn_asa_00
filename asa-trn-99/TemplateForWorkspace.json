@@ -519,6 +519,488 @@
 			]
 		},
 		{
+			"name": "[concat(parameters('workspaceName'), '/01 CARGA RAW_Teste_particao')]",
+			"type": "Microsoft.Synapse/workspaces/pipelines",
+			"apiVersion": "2019-06-01-preview",
+			"properties": {
+				"activities": [
+					{
+						"name": "CARGA CATEGORIA",
+						"type": "Copy",
+						"dependsOn": [],
+						"policy": {
+							"timeout": "0.12:00:00",
+							"retry": 0,
+							"retryIntervalInSeconds": 30,
+							"secureOutput": false,
+							"secureInput": false
+						},
+						"userProperties": [],
+						"typeProperties": {
+							"source": {
+								"type": "AzureSqlSource",
+								"queryTimeout": "02:00:00",
+								"partitionOption": "None"
+							},
+							"sink": {
+								"type": "ParquetSink",
+								"storeSettings": {
+									"type": "AzureBlobFSWriteSettings"
+								},
+								"formatSettings": {
+									"type": "ParquetWriteSettings"
+								}
+							},
+							"enableStaging": false,
+							"translator": {
+								"type": "TabularTranslator",
+								"typeConversion": true,
+								"typeConversionSettings": {
+									"allowDataTruncation": true,
+									"treatBooleanAsNumber": false
+								}
+							}
+						},
+						"inputs": [
+							{
+								"referenceName": "CATEGORIA",
+								"type": "DatasetReference",
+								"parameters": {}
+							}
+						],
+						"outputs": [
+							{
+								"referenceName": "STG_CATEGORIA",
+								"type": "DatasetReference",
+								"parameters": {}
+							}
+						]
+					},
+					{
+						"name": "CARGA CIDADE",
+						"type": "Copy",
+						"dependsOn": [
+							{
+								"activity": "CARGA CATEGORIA",
+								"dependencyConditions": [
+									"Succeeded"
+								]
+							}
+						],
+						"policy": {
+							"timeout": "0.12:00:00",
+							"retry": 0,
+							"retryIntervalInSeconds": 30,
+							"secureOutput": false,
+							"secureInput": false
+						},
+						"userProperties": [],
+						"typeProperties": {
+							"source": {
+								"type": "AzureSqlSource",
+								"queryTimeout": "02:00:00",
+								"partitionOption": "None"
+							},
+							"sink": {
+								"type": "ParquetSink",
+								"storeSettings": {
+									"type": "AzureBlobFSWriteSettings"
+								},
+								"formatSettings": {
+									"type": "ParquetWriteSettings"
+								}
+							},
+							"enableStaging": false,
+							"translator": {
+								"type": "TabularTranslator",
+								"typeConversion": true,
+								"typeConversionSettings": {
+									"allowDataTruncation": true,
+									"treatBooleanAsNumber": false
+								}
+							}
+						},
+						"inputs": [
+							{
+								"referenceName": "CIDADE",
+								"type": "DatasetReference",
+								"parameters": {}
+							}
+						],
+						"outputs": [
+							{
+								"referenceName": "STG_CIDADE",
+								"type": "DatasetReference",
+								"parameters": {}
+							}
+						]
+					},
+					{
+						"name": "CARGA CLIENTE",
+						"type": "Copy",
+						"dependsOn": [
+							{
+								"activity": "CARGA CIDADE",
+								"dependencyConditions": [
+									"Succeeded"
+								]
+							}
+						],
+						"policy": {
+							"timeout": "0.12:00:00",
+							"retry": 0,
+							"retryIntervalInSeconds": 30,
+							"secureOutput": false,
+							"secureInput": false
+						},
+						"userProperties": [],
+						"typeProperties": {
+							"source": {
+								"type": "AzureSqlSource",
+								"queryTimeout": "02:00:00",
+								"partitionOption": "None"
+							},
+							"sink": {
+								"type": "ParquetSink",
+								"storeSettings": {
+									"type": "AzureBlobFSWriteSettings"
+								},
+								"formatSettings": {
+									"type": "ParquetWriteSettings"
+								}
+							},
+							"enableStaging": false,
+							"translator": {
+								"type": "TabularTranslator",
+								"typeConversion": true,
+								"typeConversionSettings": {
+									"allowDataTruncation": true,
+									"treatBooleanAsNumber": false
+								}
+							}
+						},
+						"inputs": [
+							{
+								"referenceName": "CLIENTE",
+								"type": "DatasetReference",
+								"parameters": {}
+							}
+						],
+						"outputs": [
+							{
+								"referenceName": "STG_CLIENTE",
+								"type": "DatasetReference",
+								"parameters": {}
+							}
+						]
+					},
+					{
+						"name": "CARGA PRODUTOS",
+						"type": "Copy",
+						"dependsOn": [
+							{
+								"activity": "CARGA CLIENTE",
+								"dependencyConditions": [
+									"Succeeded"
+								]
+							}
+						],
+						"policy": {
+							"timeout": "0.12:00:00",
+							"retry": 0,
+							"retryIntervalInSeconds": 30,
+							"secureOutput": false,
+							"secureInput": false
+						},
+						"userProperties": [],
+						"typeProperties": {
+							"source": {
+								"type": "AzureSqlSource",
+								"queryTimeout": "02:00:00",
+								"partitionOption": "None"
+							},
+							"sink": {
+								"type": "ParquetSink",
+								"storeSettings": {
+									"type": "AzureBlobFSWriteSettings"
+								},
+								"formatSettings": {
+									"type": "ParquetWriteSettings"
+								}
+							},
+							"enableStaging": false,
+							"translator": {
+								"type": "TabularTranslator",
+								"typeConversion": true,
+								"typeConversionSettings": {
+									"allowDataTruncation": true,
+									"treatBooleanAsNumber": false
+								}
+							}
+						},
+						"inputs": [
+							{
+								"referenceName": "PRODUTO",
+								"type": "DatasetReference",
+								"parameters": {}
+							}
+						],
+						"outputs": [
+							{
+								"referenceName": "STG_PRODUTOS",
+								"type": "DatasetReference",
+								"parameters": {}
+							}
+						]
+					},
+					{
+						"name": "CARGA UNIDADE",
+						"type": "Copy",
+						"dependsOn": [
+							{
+								"activity": "CARGA PRODUTOS",
+								"dependencyConditions": [
+									"Succeeded"
+								]
+							}
+						],
+						"policy": {
+							"timeout": "0.12:00:00",
+							"retry": 0,
+							"retryIntervalInSeconds": 30,
+							"secureOutput": false,
+							"secureInput": false
+						},
+						"userProperties": [],
+						"typeProperties": {
+							"source": {
+								"type": "AzureSqlSource",
+								"queryTimeout": "02:00:00",
+								"partitionOption": "None"
+							},
+							"sink": {
+								"type": "ParquetSink",
+								"storeSettings": {
+									"type": "AzureBlobFSWriteSettings"
+								},
+								"formatSettings": {
+									"type": "ParquetWriteSettings"
+								}
+							},
+							"enableStaging": false,
+							"translator": {
+								"type": "TabularTranslator",
+								"typeConversion": true,
+								"typeConversionSettings": {
+									"allowDataTruncation": true,
+									"treatBooleanAsNumber": false
+								}
+							}
+						},
+						"inputs": [
+							{
+								"referenceName": "UNIDADE",
+								"type": "DatasetReference",
+								"parameters": {}
+							}
+						],
+						"outputs": [
+							{
+								"referenceName": "STG_UNIDADE",
+								"type": "DatasetReference",
+								"parameters": {}
+							}
+						]
+					},
+					{
+						"name": "CARGA  VENDAS",
+						"type": "Copy",
+						"dependsOn": [
+							{
+								"activity": "CARGA VENDEDORES",
+								"dependencyConditions": [
+									"Succeeded"
+								]
+							}
+						],
+						"policy": {
+							"timeout": "0.12:00:00",
+							"retry": 0,
+							"retryIntervalInSeconds": 30,
+							"secureOutput": false,
+							"secureInput": false
+						},
+						"userProperties": [],
+						"typeProperties": {
+							"source": {
+								"type": "AzureSqlSource",
+								"queryTimeout": "02:00:00",
+								"partitionOption": "None"
+							},
+							"sink": {
+								"type": "ParquetSink",
+								"storeSettings": {
+									"type": "AzureBlobFSWriteSettings"
+								},
+								"formatSettings": {
+									"type": "ParquetWriteSettings"
+								}
+							},
+							"enableStaging": false
+						},
+						"inputs": [
+							{
+								"referenceName": "VENDAS",
+								"type": "DatasetReference",
+								"parameters": {}
+							}
+						],
+						"outputs": [
+							{
+								"referenceName": "STG_VENDAS",
+								"type": "DatasetReference",
+								"parameters": {}
+							}
+						]
+					},
+					{
+						"name": "CARGA VENDEDORES",
+						"type": "Copy",
+						"dependsOn": [
+							{
+								"activity": "CARGA UNIDADE",
+								"dependencyConditions": [
+									"Succeeded"
+								]
+							}
+						],
+						"policy": {
+							"timeout": "0.12:00:00",
+							"retry": 0,
+							"retryIntervalInSeconds": 30,
+							"secureOutput": false,
+							"secureInput": false
+						},
+						"userProperties": [],
+						"typeProperties": {
+							"source": {
+								"type": "AzureSqlSource",
+								"queryTimeout": "02:00:00",
+								"partitionOption": "None"
+							},
+							"sink": {
+								"type": "ParquetSink",
+								"storeSettings": {
+									"type": "AzureBlobFSWriteSettings"
+								},
+								"formatSettings": {
+									"type": "ParquetWriteSettings"
+								}
+							},
+							"enableStaging": false,
+							"translator": {
+								"type": "TabularTranslator",
+								"typeConversion": true,
+								"typeConversionSettings": {
+									"allowDataTruncation": true,
+									"treatBooleanAsNumber": false
+								}
+							}
+						},
+						"inputs": [
+							{
+								"referenceName": "VENDEDORES",
+								"type": "DatasetReference",
+								"parameters": {}
+							}
+						],
+						"outputs": [
+							{
+								"referenceName": "STG_VENDEDORES",
+								"type": "DatasetReference",
+								"parameters": {}
+							}
+						]
+					},
+					{
+						"name": "CARGA VENDAS ITENS",
+						"type": "Copy",
+						"dependsOn": [
+							{
+								"activity": "CARGA  VENDAS",
+								"dependencyConditions": [
+									"Succeeded"
+								]
+							}
+						],
+						"policy": {
+							"timeout": "0.12:00:00",
+							"retry": 0,
+							"retryIntervalInSeconds": 30,
+							"secureOutput": false,
+							"secureInput": false
+						},
+						"userProperties": [],
+						"typeProperties": {
+							"source": {
+								"type": "AzureSqlSource",
+								"queryTimeout": "02:00:00",
+								"partitionOption": "None"
+							},
+							"sink": {
+								"type": "ParquetSink",
+								"storeSettings": {
+									"type": "AzureBlobFSWriteSettings"
+								},
+								"formatSettings": {
+									"type": "ParquetWriteSettings"
+								}
+							},
+							"enableStaging": false
+						},
+						"inputs": [
+							{
+								"referenceName": "VENDAS_ITENS",
+								"type": "DatasetReference",
+								"parameters": {}
+							}
+						],
+						"outputs": [
+							{
+								"referenceName": "SRT_VENDAS_ITENS",
+								"type": "DatasetReference",
+								"parameters": {}
+							}
+						]
+					}
+				],
+				"policy": {
+					"elapsedTimeMetric": {},
+					"cancelAfter": {}
+				},
+				"annotations": [],
+				"lastPublishTime": "2022-09-09T13:19:56Z"
+			},
+			"dependsOn": [
+				"[concat(variables('workspaceId'), '/datasets/CATEGORIA')]",
+				"[concat(variables('workspaceId'), '/datasets/STG_CATEGORIA')]",
+				"[concat(variables('workspaceId'), '/datasets/CIDADE')]",
+				"[concat(variables('workspaceId'), '/datasets/STG_CIDADE')]",
+				"[concat(variables('workspaceId'), '/datasets/CLIENTE')]",
+				"[concat(variables('workspaceId'), '/datasets/STG_CLIENTE')]",
+				"[concat(variables('workspaceId'), '/datasets/PRODUTO')]",
+				"[concat(variables('workspaceId'), '/datasets/STG_PRODUTOS')]",
+				"[concat(variables('workspaceId'), '/datasets/UNIDADE')]",
+				"[concat(variables('workspaceId'), '/datasets/STG_UNIDADE')]",
+				"[concat(variables('workspaceId'), '/datasets/VENDAS')]",
+				"[concat(variables('workspaceId'), '/datasets/STG_VENDAS')]",
+				"[concat(variables('workspaceId'), '/datasets/VENDEDORES')]",
+				"[concat(variables('workspaceId'), '/datasets/STG_VENDEDORES')]",
+				"[concat(variables('workspaceId'), '/datasets/VENDAS_ITENS')]",
+				"[concat(variables('workspaceId'), '/datasets/SRT_VENDAS_ITENS')]"
+			]
+		},
+		{
 			"name": "[concat(parameters('workspaceName'), '/02_CDC')]",
 			"type": "Microsoft.Synapse/workspaces/pipelines",
 			"apiVersion": "2019-06-01-preview",
@@ -2580,7 +3062,7 @@
 					"name": "01_SERVERLESS"
 				},
 				"content": {
-					"query": "-- cria login\ncreate login [bruno.galvincio@dataex.com.br] from external provider\nGO\n\n-- cria usuario\nuse lhdw\n\nCREATE user [bruno.galvincio@dataex.com.br] from login [bruno.galvincio@dataex.com.br]\nGO\n-- add role\nalter ROLE db_owner ADD MEMBER [bruno.galvincio@dataex.com.br]\n\n--adicionar contributor datalake\n\n\n",
+					"query": "-- cria login\ncreate login [bruno.galvincio@dataex.com.br] from external provider\ncreate login [joao.defanti@dataex.com.br] from external provider\nGO\n\n-- cria usuario\nuse lhdw\n\nCREATE user [bruno.galvincio@dataex.com.br] from login [bruno.galvincio@dataex.com.br]\nCREATE user [joao.defanti@dataex.com.br] from login [joao.defanti@dataex.com.br]\nGO\n-- add role\nalter ROLE db_owner ADD MEMBER [bruno.galvincio@dataex.com.br]\nalter ROLE db_owner ADD MEMBER [joao.defanti@dataex.com.br]\n\n--adicionar contributor datalake\n\n-- cria Login\ncreate login [c_atneto@solarbr.com.br] from external provider\ncreate login [t_jboomsma@solarbr.com.br] from external provider\ncreate login [t_lfalima@solarbr.com.br] from external provider\ncreate login [vagner.santiago@solarbr.com.br] from external provider\ncreate login [vfontenele@solarbr.com.br] from external provider\ncreate login [marcia.fonseca@solarbr.com.br] from external provider\ncreate login [oberlandy.nascimento@solarbr.com.br] from external provider\n\n\n--cria user\nCREATE user [c_atneto@solarbr.com.br] from login [c_atneto@solarbr.com.br] from external provider\nCREATE user [t_jboomsma@solarbr.com.br] from login [t_jboomsma@solarbr.com.br] from external provider\nCREATE user [t_lfalima@solarbr.com.br] from login [t_lfalima@solarbr.com.br] from external provider\nCREATE user [vagner.santiago@solarbr.com.br] from login [vagner.santiago@solarbr.com.br] from external provider\nCREATE user [vfontenele@solarbr.com.br] from login [vfontenele@solarbr.com.br] from external provider\nCREATE user [marcia.fonseca@solarbr.com.br] from login [marcia.fonseca@solarbr.com.br] from external provider\nCREATE user [oberlandy.nascimento@solarbr.com.br] from login [oberlandy.nascimento@solarbr.com.br] from external provider\n\n--roles\n--Leitura\nALTER ROLE db_datareader ADD MEMBER [c_atneto@solarbr.com.br]\nALTER ROLE db_datareader ADD MEMBER [t_jboomsma@solarbr.com.br]\nALTER ROLE db_datareader ADD MEMBER [t_lfalima@solarbr.com.br]\nALTER ROLE db_datareader ADD MEMBER [vagner.santiago@solarbr.com.br]\nALTER ROLE db_datareader ADD MEMBER [vfontenele@solarbr.com.br]\nALTER ROLE db_datareader ADD MEMBER [marcia.fonseca@solarbr.com.br]\nALTER ROLE db_datareader ADD MEMBER [oberlandy.nascimento@solarbr.com.br]\nALTER ROLE db_datareader ADD MEMBER [joao.defanti@dataex.com.br]\n\n--Escrita\nALTER ROLE db_datawriter ADD MEMBER [c_atneto@solarbr.com.br]\nALTER ROLE db_datawriter ADD MEMBER [t_jboomsma@solarbr.com.br]\nALTER ROLE db_datawriter ADD MEMBER [t_lfalima@solarbr.com.br]\nALTER ROLE db_datawriter ADD MEMBER [vagner.santiago@solarbr.com.br]\nALTER ROLE db_datawriter ADD MEMBER [vfontenele@solarbr.com.br]\nALTER ROLE db_datawriter ADD MEMBER [marcia.fonseca@solarbr.com.br]\nALTER ROLE db_datawriter ADD MEMBER [oberlandy.nascimento@solarbr.com.br]\nALTER ROLE db_datawriter ADD MEMBER [joao.defanti@dataex.com.br]\n\n--DDL (cria e define objetos)\nALTER ROLE db_ddladmin ADD MEMBER [c_atneto@solarbr.com.br]\nALTER ROLE db_ddladmin ADD MEMBER [t_jboomsma@solarbr.com.br]\nALTER ROLE db_ddladmin ADD MEMBER [t_lfalima@solarbr.com.br]\nALTER ROLE db_ddladmin ADD MEMBER [vagner.santiago@solarbr.com.br]\nALTER ROLE db_ddladmin ADD MEMBER [vfontenele@solarbr.com.br]\nALTER ROLE db_ddladmin ADD MEMBER [marcia.fonseca@solarbr.com.br]\nALTER ROLE db_ddladmin ADD MEMBER [oberlandy.nascimento@solarbr.com.br]\nALTER ROLE db_ddladmin ADD MEMBER [joao.defanti@dataex.com.br]\n--BULK Carga em massa\nGRANT ADMINISTER DATABASE BULK OPERATIONS TO [c_atneto@solarbr.com.br]\nGRANT ADMINISTER DATABASE BULK OPERATIONS TO [t_jboomsma@solarbr.com.br]\nGRANT ADMINISTER DATABASE BULK OPERATIONS TO [t_lfalima@solarbr.com.br]\nGRANT ADMINISTER DATABASE BULK OPERATIONS TO [vagner.santiago@solarbr.com.br]\nGRANT ADMINISTER DATABASE BULK OPERATIONS TO [vfontenele@solarbr.com.br]\nGRANT ADMINISTER DATABASE BULK OPERATIONS TO [marcia.fonseca@solarbr.com.br]\nGRANT ADMINISTER DATABASE BULK OPERATIONS TO [oberlandy.nascimento@solarbr.com.br]\nGRANT ADMINISTER DATABASE BULK OPERATIONS TO [joao.defanti@dataex.com.br]\n\n",
 					"metadata": {
 						"language": "sql"
 					},
@@ -3437,6 +3919,46 @@
 					},
 					"currentConnection": {
 						"databaseName": "master",
+						"poolName": "Built-in"
+					},
+					"resultLimit": 5000
+				},
+				"type": "SqlQuery"
+			},
+			"dependsOn": []
+		},
+		{
+			"name": "[concat(parameters('workspaceName'), '/SQL script 1')]",
+			"type": "Microsoft.Synapse/workspaces/sqlscripts",
+			"apiVersion": "2019-06-01-preview",
+			"properties": {
+				"content": {
+					"query": "SELECT TOP (100) [NUM_VENDA]\n,[DATA_VENDA]\n,[ID_CLIENTE]\n,[STATUS]\n,[ID_VENDEDOR]\n,[NUM_SEQ]\n,[ID_PROD]\n,[QTDE]\n,[VAL_UNIT]\n,[VAL_TOTAL]\n,[ANO]\n,[MES]\n FROM [default].[dbo].[fato_venda]",
+					"metadata": {
+						"language": "sql"
+					},
+					"currentConnection": {
+						"databaseName": "default",
+						"poolName": "Built-in"
+					},
+					"resultLimit": 5000
+				},
+				"type": "SqlQuery"
+			},
+			"dependsOn": []
+		},
+		{
+			"name": "[concat(parameters('workspaceName'), '/SQL script 2')]",
+			"type": "Microsoft.Synapse/workspaces/sqlscripts",
+			"apiVersion": "2019-06-01-preview",
+			"properties": {
+				"content": {
+					"query": "SELECT TOP (100) [id]\n,[primeiro_nome]\n,[ultimo_nome]\n,[email]\n,[sexo]\n,[cidade]\n,[pais]\n,[codigo_pais]\n,[Time_zone]\n,[empresa]\n,[profissao]\n,[etnia]\n,[idioma]\n,[montadora]\n,[carro]\n,[ano]\n,[nascimento]\n FROM [default].[dbo].[crm]",
+					"metadata": {
+						"language": "sql"
+					},
+					"currentConnection": {
+						"databaseName": "default",
 						"poolName": "Built-in"
 					},
 					"resultLimit": 5000
@@ -4497,7 +5019,7 @@
 						"spark.dynamicAllocation.enabled": "true",
 						"spark.dynamicAllocation.minExecutors": "1",
 						"spark.dynamicAllocation.maxExecutors": "4",
-						"spark.autotune.trackingId": "8fe76a1c-1b20-4101-af14-a5f6d8253d99"
+						"spark.autotune.trackingId": "c42bb8fb-a45f-4409-9bec-75f09cd4db2f"
 					}
 				},
 				"metadata": {
@@ -4522,7 +5044,8 @@
 						"sparkVersion": "3.2",
 						"nodeCount": 10,
 						"cores": 4,
-						"memory": 28
+						"memory": 28,
+						"automaticScaleJobs": true
 					},
 					"sessionKeepAliveTimeout": 30
 				},
@@ -4576,7 +5099,7 @@
 							"gold_folder_path = 'abfss://treinamento@adlstrnsolar99.dfs.core.windows.net/gold'"
 						],
 						"outputs": [],
-						"execution_count": 3
+						"execution_count": 4
 					},
 					{
 						"cell_type": "code",
@@ -4596,7 +5119,7 @@
 							"spark.conf.set(\"spark.sql.sources.partitionColumnTypeInference.enabled\", \"false\")"
 						],
 						"outputs": [],
-						"execution_count": null
+						"execution_count": 5
 					},
 					{
 						"cell_type": "code",
@@ -4624,7 +5147,7 @@
 							"LOCATION 'abfss://treinamento@adlstrnsolar99.dfs.core.windows.net/gold';"
 						],
 						"outputs": [],
-						"execution_count": null
+						"execution_count": 6
 					},
 					{
 						"cell_type": "code",
@@ -4644,7 +5167,7 @@
 							"trip_data_green_df = spark.read.parquet(f\"{silver_folder_path}/trip_data_green\") "
 						],
 						"outputs": [],
-						"execution_count": null
+						"execution_count": 7
 					},
 					{
 						"cell_type": "code",
@@ -5022,7 +5545,7 @@
 						"spark.dynamicAllocation.enabled": "true",
 						"spark.dynamicAllocation.minExecutors": "1",
 						"spark.dynamicAllocation.maxExecutors": "4",
-						"spark.autotune.trackingId": "05652f7b-9730-4a93-b4ae-e72059f3f4ca"
+						"spark.autotune.trackingId": "7bbd346d-d4aa-4f90-8266-f7f1baacd6c1"
 					}
 				},
 				"metadata": {
@@ -5047,8 +5570,7 @@
 						"sparkVersion": "3.2",
 						"nodeCount": 10,
 						"cores": 4,
-						"memory": 28,
-						"automaticScaleJobs": true
+						"memory": 28
 					},
 					"sessionKeepAliveTimeout": 30
 				},
