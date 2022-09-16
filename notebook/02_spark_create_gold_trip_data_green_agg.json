@@ -20,7 +20,7 @@
 				"spark.dynamicAllocation.enabled": "true",
 				"spark.dynamicAllocation.minExecutors": "1",
 				"spark.dynamicAllocation.maxExecutors": "4",
-				"spark.autotune.trackingId": "8fe76a1c-1b20-4101-af14-a5f6d8253d99"
+				"spark.autotune.trackingId": "a9486bcf-6e58-4ddd-8951-c0e0b4738022"
 			}
 		},
 		"metadata": {
@@ -99,7 +99,7 @@
 					"silver_folder_path = 'abfss://treinamento@adlstrnsolar99.dfs.core.windows.net/silver'\n",
 					"gold_folder_path = 'abfss://treinamento@adlstrnsolar99.dfs.core.windows.net/gold'"
 				],
-				"execution_count": 3
+				"execution_count": 4
 			},
 			{
 				"cell_type": "code",
@@ -118,7 +118,7 @@
 					"#Defina a spark  config para ser capaz de obter as colunas particionadas ano e mês como strings em vez de inteiros.\n",
 					"spark.conf.set(\"spark.sql.sources.partitionColumnTypeInference.enabled\", \"false\")"
 				],
-				"execution_count": null
+				"execution_count": 5
 			},
 			{
 				"cell_type": "code",
@@ -145,7 +145,7 @@
 					"CREATE DATABASE IF NOT EXISTS nyc_taxi_ldw_spark\n",
 					"LOCATION 'abfss://treinamento@adlstrnsolar99.dfs.core.windows.net/gold';"
 				],
-				"execution_count": null
+				"execution_count": 6
 			},
 			{
 				"cell_type": "code",
@@ -164,7 +164,7 @@
 					"# Leia os dados da camada prata prata a serem processados.\n",
 					"trip_data_green_df = spark.read.parquet(f\"{silver_folder_path}/trip_data_green\") "
 				],
-				"execution_count": null
+				"execution_count": 7
 			},
 			{
 				"cell_type": "code",
