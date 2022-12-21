@@ -1,7 +1,9 @@
 {
 	"name": "CARGA_RAW",
 	"properties": {
-		"annotations": [],
+		"annotations": [
+			"Teste"
+		],
 		"runtimeState": "Stopped",
 		"pipelines": [],
 		"type": "ScheduleTrigger",
